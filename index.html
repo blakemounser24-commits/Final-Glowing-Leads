@@ -2360,7 +2360,20 @@
     }
   }
 
+  // Mobile browsers fire a real "resize" event when the address bar
+  // collapses/expands during scroll — that's a height change with the
+  // same width, not an actual resize. Reacting to it by recomputing
+  // computeCover() visibly re-crops/re-zooms the image mid-scroll, which
+  // is exactly what was reported as the hero "widening" while scrolling.
+  // A genuine resize or orientation change always changes the width too,
+  // so gating on that filters the address-bar noise out without missing
+  // any real resize.
+  var lastResizeWidth = window.innerWidth;
+
   function onResize(){
+    if (window.innerWidth === lastResizeWidth) return;
+    lastResizeWidth = window.innerWidth;
+
     resizeCanvas();
     renderCurrent();
     // Geometry changed (offsetX/offsetY/drawW/drawH) but the frame
