@@ -8,25 +8,48 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- GSAP/ScrollTrigger/Flip/Lenis are now vendored in ./vendor (same exact
-     pinned versions as before — 3.12.5 / 1.3.25) instead of loaded from
+<!-- GSAP/ScrollTrigger/Lenis are vendored in ./vendor (same exact pinned
+     versions as before — 3.12.5 / 1.3.25) instead of loaded from
      cdnjs/jsdelivr. These are render-blocking scripts that the hero engine
      depends on before it can start requesting a single frame image, so
      every millisecond here is a millisecond added to time-to-first-frame.
      Self-hosting them means the browser reuses the connection it already
      has open to this same origin instead of paying for two more cold
-     DNS+TLS handshakes to third-party CDNs first. -->
+     DNS+TLS handshakes to third-party CDNs first. (GSAP's Flip plugin was
+     also previously loaded here but never actually used anywhere in the
+     site — dropped entirely, one less request and ~25KB less to fetch
+     before the hero can start.) -->
 <script src="./vendor/gsap.min.js" onerror="console.error('[hero] Failed to load GSAP')"></script>
 <script src="./vendor/ScrollTrigger.min.js" onerror="console.error('[hero] Failed to load ScrollTrigger')"></script>
-<script src="./vendor/Flip.min.js" onerror="console.error('[site] Failed to load GSAP Flip')"></script>
 <script src="./vendor/lenis.min.js" onerror="console.error('[hero] Failed to load Lenis')"></script>
-<!-- Gets the browser fetching the very first hero frames as soon as the
-     head is parsed, in parallel with the scripts above downloading,
-     instead of waiting for them to finish and the hero engine's JS to run
-     before issuing these requests. -->
-<link rel="preload" as="image" href="./frames/frame_0001.webp">
-<link rel="preload" as="image" href="./frames/frame_0002.webp">
-<link rel="preload" as="image" href="./frames/frame_0003.webp">
+<!-- Preload every frame in the hero's fast-load batch (matches
+     PHASE1_COUNT in the hero script below) so the browser's preload
+     scanner puts all of them in flight the moment <head> is parsed —
+     genuinely parallel over HTTP/2 — instead of waiting for the scripts
+     above to download and execute and the hero engine's JS to run before
+     it starts issuing these requests one pool at a time. fetchpriority
+     pushes them ahead of lower-priority page assets in the browser's own
+     request queue; harmless no-op hint on browsers that don't support it. -->
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0001.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0002.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0003.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0004.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0005.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0008.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0009.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0010.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0011.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0012.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0013.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0014.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0015.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0016.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0017.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0018.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0019.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0020.webp">
 <style>
   html{
     background:#02040A;
