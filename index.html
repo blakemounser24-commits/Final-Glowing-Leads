@@ -2090,26 +2090,11 @@
     return -1;
   }
 
-  // Smooths the hand-off between adjacent frames without looking like
-  // motion blur. A straight cross-fade across a frame's *entire* hold
-  // (~29px of the 3500px spacer) means two different moments of the scene
-  // are overlaid for most of that distance — that reads as a constant
-  // blur/ghost, which is exactly what "no motion blur" is asking to
-  // remove. Instead, each frame holds crisp and alone for the first
-  // (1 - BLEND_WINDOW) share of its interval, then eases into the next
-  // frame only over the final stretch, landing fully switched over right
-  // as the next interval begins. Net effect: no instant jump-cut (the
-  // "sticky" complaint), but also no prolonged double-exposure look — the
-  // blend is a brief snap at the seam, not a constant overlay.
-  var BLEND_WINDOW = 0.35;
-
-  function easeBlend(t){
-    // smoothstep — eases the start and end of the transition so it snaps
-    // through the middle rather than lingering at a 50/50 overlay, which
-    // is the part that reads most as "blurry".
-    return t * t * (3 - 2 * t);
-  }
-
+  // Cross-fades between the two frames the current scroll position falls
+  // between, across the whole of that interval, instead of hard-cutting
+  // on whichever one Math.round() lands on. With only 122 stills covering
+  // the whole hero, a hard cut holds each frame for ~29px of scroll then
+  // jumps — this makes it read as one continuous motion instead.
   function draw(indexA, indexB, blend){
     var imgA = frames[indexA];
     if (!imgA) return;
@@ -2147,15 +2132,11 @@
     var actualA = findClosestLoaded(a);
     if (actualA === -1) return;
     var actualB = loadedFlags[b] ? b : actualA;
+    if (actualB === actualA) frac = 0;
 
-    var blend = 0;
-    if (actualB !== actualA && frac > (1 - BLEND_WINDOW)){
-      blend = (frac - (1 - BLEND_WINDOW)) / BLEND_WINDOW;
-      blend = easeBlend(blend);
-    }
     // Two decimal places is plenty of resolution for a visible blend and
     // kills float-noise redraws while visually stationary.
-    var roundedBlend = Math.round(blend * 100) / 100;
+    var roundedBlend = Math.round(frac * 100) / 100;
 
     if (actualA === lastDrawnA && actualB === lastDrawnB && roundedBlend === lastDrawnBlend) return;
 
