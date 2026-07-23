@@ -2283,7 +2283,14 @@
         trigger: spacer,
         start: "top top",
         end: "bottom bottom",
-        scrub: true,
+        // A numeric scrub (was `true`, i.e. 0) makes ScrollTrigger ease
+        // self.progress toward the actual scroll position over this many
+        // seconds instead of snapping to it on every single scroll event.
+        // Untouched frame assets/draw logic — this only smooths *which*
+        // frame index gets requested each tick, filtering out the jitter
+        // in raw wheel/touch scroll deltas before it ever reaches the
+        // canvas. Small enough that it shouldn't read as input lag.
+        scrub: 0.3,
         onUpdate: function(self){
           currentFrame = self.progress * (TOTAL_FRAMES - 1);
           scheduleRender();
