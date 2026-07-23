@@ -5,5 +5,11 @@ node_modules/
 
 temporary screenshots/
 
+# Original 122-frame hero sequence, kept on disk as a local safety net
+# after switching to the 241-frame interpolated set — already fully
+# preserved in git history too, so not committed here to avoid
+# duplicating ~18MB permanently in the repo.
+frames_old_122/
+
 .vercel
 .env*

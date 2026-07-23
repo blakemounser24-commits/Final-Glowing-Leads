@@ -50,6 +50,26 @@
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0018.webp">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0019.webp">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0020.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0021.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0022.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0023.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0024.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0025.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0026.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0027.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0028.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0029.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0030.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0031.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0032.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0033.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0034.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0035.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0036.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0037.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0038.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0039.webp">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0040.webp">
 <style>
   html{
     background:#02040A;
@@ -1927,19 +1947,26 @@
 
   gsap.registerPlugin(ScrollTrigger);
 
-  var TOTAL_FRAMES = 122;
+  // 241 frames, not the original 122 — every other frame is a genuine
+  // motion-interpolated (ffmpeg minterpolate) in-between frame, not a
+  // duplicate or a blend. This is what lets the hero play as one
+  // continuous motion on a hard frame-swap with no cross-fade needed:
+  // each step is now ~14.5px of scroll instead of ~29px, small enough
+  // that the swap itself stops being perceptible.
+  var TOTAL_FRAMES = 241;
   // Only this many frames block the preloader — the rest stream in the
-  // background afterward. Smaller than the original 52: getting to
-  // "interactive" fast matters more than having the whole sequence ready
-  // up front, and if the user scrolls ahead of the background batch,
-  // findClosestLoaded() below already degrades gracefully to the nearest
-  // frame that IS ready rather than failing.
-  var PHASE1_COUNT = 20;
-  // High enough that all of phase 1 (20 frames) fires as a single parallel
-  // batch instead of two waves — the site's HTTP/2 connection to Vercel's
+  // background afterward. Getting to "interactive" fast matters more than
+  // having the whole sequence ready up front, and if the user scrolls
+  // ahead of the background batch, findClosestLoaded() below already
+  // degrades gracefully to the nearest frame that IS ready rather than
+  // failing. Scaled up from 20 to keep roughly the same fraction of the
+  // (now larger) sequence loaded before unlock.
+  var PHASE1_COUNT = 40;
+  // High enough that all of phase 1 fires as a single parallel batch
+  // instead of several waves — the site's HTTP/2 connection to Vercel's
   // edge multiplexes many concurrent requests cheaply, so this isn't
   // fighting a per-connection limit the way it would over HTTP/1.1.
-  var CONCURRENCY = 20;
+  var CONCURRENCY = 40;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
@@ -1968,8 +1995,6 @@
   var cssH = window.innerHeight;
   var drawW = 0, drawH = 0, offsetX = 0, offsetY = 0;
 
-  // Raw, unrounded scroll position in frame units (0..TOTAL_FRAMES-1) —
-  // see renderCurrent() for how this becomes the windowed blend.
   var currentFrame = 0;
 
   function frameUrl(index){
@@ -2090,60 +2115,33 @@
     return -1;
   }
 
-  // Cross-fades between the two frames the current scroll position falls
-  // between, across the whole of that interval, instead of hard-cutting
-  // on whichever one Math.round() lands on. With only 122 stills covering
-  // the whole hero, a hard cut holds each frame for ~29px of scroll then
-  // jumps — this makes it read as one continuous motion instead.
-  function draw(indexA, indexB, blend){
-    var imgA = frames[indexA];
-    if (!imgA) return;
+  // Plain hard-cut draw — no cross-fade. With the sequence now at 241
+  // frames (double the original 122, via real motion-interpolated frames
+  // rather than a blended fake), each step is small enough on its own
+  // that a straight swap reads as continuous motion, with none of the
+  // ghosting a cross-fade caused on fast-moving bright content.
+  function draw(index){
+    var img = frames[index];
+    if (!img) return;
     // No clearRect: computeCover() is a "cover" fit (drawW/drawH are
     // always >= cssW/cssH — one offset is 0, the other is a <=0 crop
     // shift, never a positive gap), so drawImage always paints over the
     // entire canvas already. Clearing first was pure redundant per-frame
     // work at full canvas size, on top of the draw that immediately
     // overwrites it anyway.
-    ctx.globalAlpha = 1;
-    ctx.drawImage(imgA, offsetX, offsetY, drawW, drawH);
-    if (indexB !== indexA && blend > 0){
-      var imgB = frames[indexB];
-      if (imgB){
-        ctx.globalAlpha = blend;
-        ctx.drawImage(imgB, offsetX, offsetY, drawW, drawH);
-        ctx.globalAlpha = 1;
-      }
-    }
+    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
   }
 
-  var lastDrawnA = -1, lastDrawnB = -1, lastDrawnBlend = -1;
+  var previousRendered = -1;
 
   function renderCurrent(){
-    // currentFrame is the raw, unrounded scroll position in frame units.
-    var raw = currentFrame;
-    if (raw < 0) raw = 0;
-    if (raw > TOTAL_FRAMES - 1) raw = TOTAL_FRAMES - 1;
-
-    var a = Math.floor(raw);
-    var frac = raw - a;
-    var b = a + 1;
-    if (b > TOTAL_FRAMES - 1){ b = a; frac = 0; }
-
-    var actualA = findClosestLoaded(a);
-    if (actualA === -1) return;
-    var actualB = loadedFlags[b] ? b : actualA;
-    if (actualB === actualA) frac = 0;
-
-    // Two decimal places is plenty of resolution for a visible blend and
-    // kills float-noise redraws while visually stationary.
-    var roundedBlend = Math.round(frac * 100) / 100;
-
-    if (actualA === lastDrawnA && actualB === lastDrawnB && roundedBlend === lastDrawnBlend) return;
-
-    draw(actualA, actualB, roundedBlend);
-    lastDrawnA = actualA;
-    lastDrawnB = actualB;
-    lastDrawnBlend = roundedBlend;
+    var target = Math.round(currentFrame);
+    var actual = findClosestLoaded(target);
+    if (actual === -1) return;
+    if (actual !== previousRendered){
+      draw(actual);
+      previousRendered = actual;
+    }
   }
 
   // Lenis + the GSAP ticker can each nudge ScrollTrigger's onUpdate within
@@ -2215,11 +2213,8 @@
   function onResize(){
     resizeCanvas();
     renderCurrent();
-    // Geometry changed (offsetX/offsetY/drawW/drawH) but the frame
-    // pair/blend likely didn't, so renderCurrent()'s "nothing changed"
-    // check above would otherwise skip redrawing at the new size.
-    if (lastDrawnA !== -1){
-      draw(lastDrawnA, lastDrawnB, lastDrawnBlend);
+    if (previousRendered !== -1){
+      draw(previousRendered);
     }
     ScrollTrigger.refresh();
   }
@@ -2280,9 +2275,7 @@
     preloaderBarFill.style.width = pct + "%";
   }).then(function(){
     currentFrame = 0;
-    lastDrawnA = -1;
-    lastDrawnB = -1;
-    lastDrawnBlend = -1;
+    previousRendered = -1;
     renderCurrent();
 
     loadPool(phase2Indices, null);
