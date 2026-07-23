@@ -263,6 +263,43 @@
   }
   .hero-nav-cta:active{ transform:translateY(1px); }
 
+  .hero-scroll-hint{
+    position:absolute;
+    top:104px;
+    right:clamp(20px,4vw,64px);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.7);
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:20px;
+    opacity:0;
+    transform:translateY(-8px);
+    pointer-events:none;
+    z-index:2;
+  }
+  .hero-scroll-hint svg{
+    width:13px;
+    height:13px;
+    flex:0 0 auto;
+    animation:heroScrollHintBob 1.6s ease-in-out infinite;
+  }
+  @keyframes heroScrollHintBob{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(3px); }
+  }
+  @media (max-width:520px){
+    .hero-scroll-hint span{ display:none; }
+    .hero-scroll-hint{ padding:10px; top:96px; }
+  }
+
   .hero-content{
     position:absolute;
     left:clamp(20px,4vw,84px);
@@ -1515,6 +1552,11 @@
     </a>
   </nav>
 
+  <div class="hero-scroll-hint" id="hero-scroll-hint" aria-hidden="true">
+    <span>Scroll to Explore</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>
+  </div>
+
   <div class="mobile-menu" id="mobile-menu">
     <a href="#services">Services</a>
     <a href="#pricing">Pricing</a>
@@ -1939,6 +1981,15 @@
 
   gsap.registerPlugin(ScrollTrigger);
 
+  // Touch-primary + narrow viewport — matches the site's own 720px nav
+  // breakpoint with a little headroom for small tablets. On these devices
+  // the hero switches from scroll-scrubbing (see setupMobileIntro() below)
+  // to a one-shot autoplay: continuously redrawing the canvas in lockstep
+  // with touch-scroll input is exactly the kind of main-thread work that
+  // fights the browser's native (compositor-only) touch scrolling, which
+  // is what was showing up as lag. Desktop keeps scroll-scrubbing as-is.
+  var isMobile = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches) && window.innerWidth <= 820;
+
   var TOTAL_FRAMES = 122;
   // Only this many frames block the preloader — the rest stream in the
   // background afterward. Cut further from 12: getting to "interactive"
@@ -2352,10 +2403,96 @@
     }
   }
 
+  // ---- Mobile: one-shot autoplay instead of scroll-scrubbing ----
+  // Same nav/heading reveal as setupOverlayReveal above, just triggered by
+  // the autoplay finishing instead of a scroll-progress threshold. Once
+  // this plays out, scrolling past the hero works exactly as it already
+  // does (native scroll, no further canvas involvement) — this only
+  // changes how the frames themselves get driven, nothing else.
+  function setupMobileIntro(){
+    try {
+      var revealTl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+
+      revealTl
+        .to(".hero-nav-links a", { opacity: 1, y: 0, duration: 0.9, stagger: 0.07 }, 0)
+        .to(".hero-nav-cta", { opacity: 1, y: 0, duration: 0.9 }, 0.1)
+        .to(".hero-nav-logo", { opacity: 1, y: 0, duration: 0.9 }, 0.22)
+        .to(".hero-heading", { opacity: 1, y: 0, duration: 1.2, ease: "power2.out" }, 0.4)
+        .to(".hero-subtitle", { opacity: 1, y: 0, duration: 0.9 }, 0.62)
+        .to(".hero-accent-line", { opacity: 1, scaleX: 1, duration: 0.8, ease: "power2.inOut" }, 0.78)
+        .to(".hero-cta", { opacity: 1, y: 0, duration: 0.9 }, 0.92);
+
+      var played = false;
+      var playback = { frame: 0 };
+
+      function playOnce(){
+        if (played) return;
+        played = true;
+        document.removeEventListener("touchstart", playOnce);
+        window.removeEventListener("scroll", playOnce);
+
+        gsap.to(playback, {
+          frame: TOTAL_FRAMES - 1,
+          duration: 2.6,
+          ease: "power1.inOut",
+          onUpdate: function(){
+            currentFrame = playback.frame;
+            scheduleRender();
+          },
+          onComplete: function(){
+            revealTl.play();
+          }
+        });
+      }
+
+      // touchstart covers an actual touch; scroll is a fallback for the
+      // rare case of a mouse/trackpad on a touch-classified device (or a
+      // browser that doesn't fire touchstart for the gesture that started
+      // the scroll). Neither calls preventDefault, so normal scrolling is
+      // completely unaffected either way.
+      document.addEventListener("touchstart", playOnce, { once: true, passive: true });
+      window.addEventListener("scroll", playOnce, { once: true, passive: true });
+    } catch (err){
+      console.error("[hero] Mobile intro failed to initialize:", err);
+    }
+  }
+
+  // ---- "Scroll to Explore" hint — purely additive, isolated from
+  // everything above. Fades in shortly after load (sits behind the
+  // preloader either way, so no visible flash), fades out the moment the
+  // user does anything scroll-like, on both mobile and desktop. ----
+  (function setupScrollHint(){
+    var hint = document.getElementById("hero-scroll-hint");
+    if (!hint) return;
+    var hidden = false;
+
+    function hide(){
+      if (hidden) return;
+      hidden = true;
+      gsap.to(hint, { opacity: 0, y: -8, duration: 0.5, ease: "power2.out" });
+      window.removeEventListener("wheel", hide);
+      window.removeEventListener("touchstart", hide);
+      window.removeEventListener("scroll", hide);
+    }
+
+    window.addEventListener("wheel", hide, { passive: true });
+    window.addEventListener("touchstart", hide, { passive: true });
+    window.addEventListener("scroll", hide, { passive: true });
+
+    gsap.to(hint, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 1.1 });
+  })();
+
   // ---- init ----
   resizeCanvas();
-  setupScrollTrigger();
-  setupOverlayReveal();
+  if (!isMobile){
+    setupScrollTrigger();
+    setupOverlayReveal();
+  }
+  // setupMobileIntro() is NOT called here — a touchstart during preload
+  // would start its 2.6s countdown before a single frame is even loaded.
+  // It's wired up after phase 1 finishes loading instead (below), so the
+  // first touch that can trigger it is always one where frames are
+  // actually ready to draw.
 
   var phase1Indices = [];
   for (var p1 = 0; p1 < PHASE1_COUNT; p1++){ phase1Indices.push(p1); }
@@ -2373,6 +2510,8 @@
     lastDrawnB = -1;
     lastDrawnBlend = -1;
     renderCurrent();
+
+    if (isMobile) setupMobileIntro();
 
     loadPool(phase2Indices, null);
 
