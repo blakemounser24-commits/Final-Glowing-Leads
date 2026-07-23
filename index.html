@@ -1915,10 +1915,38 @@
   // the pixels drawn are identical — just computed once instead of every
   // time. Bounded to a small recent-frames window (Map insertion order
   // doubles as LRU order) rather than caching all 122 at full device
-  // resolution, which would hold on the order of ~500MB+ of extra bitmap
-  // memory on a phone — a bad trade in the other direction.
-  var SCALED_CACHE_LIMIT = 24;
+  // resolution — besides the memory cost (~500MB+ on a phone), iOS Safari
+  // in particular has a hard, undocumented ceiling on total combined
+  // canvas memory per page and silently clears the oldest ones past it,
+  // which would show up as random blank flashes — worse than the lag
+  // we're fixing. A small bounded pool avoids that ceiling entirely.
+  var SCALED_CACHE_LIMIT = 32;
   var scaledCache = new Map();
+
+  // Directional prewarming: rather than only caching a frame after it's
+  // already been drawn once, use idle time between scroll events to warm
+  // a handful of frames just ahead of the current one, in whichever
+  // direction the user is actually scrolling. On a normal single pass
+  // through the hero (the common case, and the one "still laggy" almost
+  // certainly means) this keeps the cache a step ahead of the scrub
+  // instead of always reacting a frame late.
+  var PREWARM_AHEAD = 8;
+  var scrollDirection = 1;
+  var prewarmScheduled = false;
+  var idleSchedule = window.requestIdleCallback || function(cb){ setTimeout(cb, 0); };
+
+  function schedulePrewarm(){
+    if (prewarmScheduled) return;
+    prewarmScheduled = true;
+    idleSchedule(function(){
+      prewarmScheduled = false;
+      for (var k = 1; k <= PREWARM_AHEAD; k++){
+        var idx = currentFrame + scrollDirection * k;
+        if (idx < 0 || idx >= TOTAL_FRAMES) continue;
+        if (loadedFlags[idx] && !scaledCache.has(idx)) getScaledFrame(idx);
+      }
+    });
+  }
 
   var canvas = document.getElementById("hero-canvas");
   // alpha:false — every frame is a full-bleed cover-fit draw with nothing
@@ -2181,8 +2209,11 @@
         end: "bottom bottom",
         scrub: true,
         onUpdate: function(self){
-          currentFrame = Math.round(self.progress * (TOTAL_FRAMES - 1));
+          var next = Math.round(self.progress * (TOTAL_FRAMES - 1));
+          if (next !== currentFrame) scrollDirection = next > currentFrame ? 1 : -1;
+          currentFrame = next;
           scheduleRender();
+          schedulePrewarm();
         }
       });
     } catch (err){
