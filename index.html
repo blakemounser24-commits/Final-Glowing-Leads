@@ -62,10 +62,6 @@
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp?v=3">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp?v=3">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0008.webp?v=3">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0009.webp?v=3">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0010.webp?v=3">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0011.webp?v=3">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0012.webp?v=3">
 <style>
   html{
     background:#02040A;
@@ -1945,18 +1941,18 @@
 
   var TOTAL_FRAMES = 122;
   // Only this many frames block the preloader — the rest stream in the
-  // background afterward. Cut further from 20: getting to "interactive"
+  // background afterward. Cut further from 12: getting to "interactive"
   // fast matters more than having the whole sequence ready up front, and
   // if the user scrolls ahead of the background batch, findClosestLoaded()
   // below already degrades gracefully to the nearest frame that IS ready
-  // rather than failing. At ~110KB/frame this is roughly 1.3MB blocking
-  // the preloader instead of ~2.2MB.
-  var PHASE1_COUNT = 12;
+  // rather than failing. At ~110KB/frame this is roughly 900KB blocking
+  // the preloader instead of ~1.3MB.
+  var PHASE1_COUNT = 8;
   // High enough that all of phase 1 fires as a single parallel batch
   // instead of multiple waves — the site's HTTP/2 connection to Vercel's
   // edge multiplexes many concurrent requests cheaply, so this isn't
   // fighting a per-connection limit the way it would over HTTP/1.1.
-  var CONCURRENCY = 12;
+  var CONCURRENCY = 8;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
