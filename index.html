@@ -31,6 +31,12 @@
     z-index:-1;
     pointer-events:none;
     display:block;
+    /* Fixed size + position, and its content never affects surrounding
+       layout — telling the browser that up front means a scroll-driven
+       redraw here can't trigger layout/paint work anywhere else on the
+       page, which matters most on the lower-powered compositors phones
+       use. */
+    contain:strict;
   }
   #hero-spacer{
     height:3500px;
@@ -1894,7 +1900,14 @@
   for (var i = 0; i < TOTAL_FRAMES; i++) { loadedFlags[i] = false; }
 
   var canvas = document.getElementById("hero-canvas");
-  var ctx = canvas.getContext("2d");
+  // alpha:false — every frame is a full-bleed cover-fit draw with nothing
+  // ever showing through, so the browser can skip alpha compositing this
+  // layer against the page entirely (pure perf, no visual change).
+  // desynchronized:true — hints the browser to present this canvas outside
+  // the normal synchronized compositor path where supported (mainly
+  // Chrome/Android); it's a no-op hint elsewhere, so safe everywhere. This
+  // is what actually cuts scroll-to-paint latency on phones.
+  var ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
   var spacer = document.getElementById("hero-spacer");
   var preloader = document.getElementById("preloader");
   var preloaderPercent = document.getElementById("preloader-percent");
