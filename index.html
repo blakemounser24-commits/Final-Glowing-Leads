@@ -1968,8 +1968,9 @@
   var cssH = window.innerHeight;
   var drawW = 0, drawH = 0, offsetX = 0, offsetY = 0;
 
+  // Raw, unrounded scroll position in frame units (0..TOTAL_FRAMES-1) —
+  // see renderCurrent() for how this becomes an actual cross-fade.
   var currentFrame = 0;
-  var previousRendered = -1;
 
   function frameUrl(index){
     return "./frames/frame_" + String(index + 1).padStart(4, "0") + ".webp";
@@ -2089,26 +2090,69 @@
     return -1;
   }
 
-  function draw(index){
-    var img = frames[index];
-    if (!img) return;
+  // Cross-fades between the two frames the current scroll position falls
+  // between, instead of hard-cutting on whichever one Math.round() lands
+  // on. With only 122 stills covering the whole hero, a hard cut holds
+  // each frame for ~29px of scroll then jumps — during a slow, deliberate
+  // scroll that reads as a stepped/sticky motion rather than continuous
+  // playback. Blending removes the "step" without changing a single pixel
+  // of any individual frame — it's the same technique real video-scrubber
+  // UIs use to make a limited frame count read as continuous.
+  function draw(indexA, indexB, frac){
+    var imgA = frames[indexA];
+    if (!imgA) return;
     // No clearRect: computeCover() is a "cover" fit (drawW/drawH are
     // always >= cssW/cssH — one offset is 0, the other is a <=0 crop
     // shift, never a positive gap), so drawImage always paints over the
     // entire canvas already. Clearing first was pure redundant per-frame
     // work at full canvas size, on top of the draw that immediately
     // overwrites it anyway.
-    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(imgA, offsetX, offsetY, drawW, drawH);
+    if (indexB !== indexA && frac > 0){
+      var imgB = frames[indexB];
+      if (imgB){
+        ctx.globalAlpha = frac;
+        ctx.drawImage(imgB, offsetX, offsetY, drawW, drawH);
+        ctx.globalAlpha = 1;
+      }
+    }
   }
 
+  // Last frame pair actually drawn — used both to skip redundant redraws
+  // (renderCurrent) and to redraw the same content after a resize
+  // (onResize), same role "previousRendered" played before, just carrying
+  // three values now instead of one frame index.
+  var lastDrawnA = -1, lastDrawnB = -1, lastDrawnFrac = -1;
+
   function renderCurrent(){
-    var target = currentFrame;
-    var actual = findClosestLoaded(target);
-    if (actual === -1) return;
-    if (actual !== previousRendered){
-      draw(actual);
-      previousRendered = actual;
-    }
+    // currentFrame is the raw, unrounded scroll position in frame units —
+    // e.g. 41.7 means 70% of the way from frame 41 to frame 42.
+    var raw = currentFrame;
+    if (raw < 0) raw = 0;
+    if (raw > TOTAL_FRAMES - 1) raw = TOTAL_FRAMES - 1;
+
+    var a = Math.floor(raw);
+    var frac = raw - a;
+    var b = a + 1;
+    if (b > TOTAL_FRAMES - 1){ b = a; frac = 0; }
+
+    var actualA = findClosestLoaded(a);
+    if (actualA === -1) return;
+    var actualB = loadedFlags[b] ? b : actualA;
+    if (actualB === actualA) frac = 0;
+
+    // Rounding kills float-noise (progress recomputed slightly differently
+    // frame to frame) that would otherwise force a redraw every tick even
+    // while visually stationary.
+    var roundedFrac = Math.round(frac * 100) / 100;
+
+    if (actualA === lastDrawnA && actualB === lastDrawnB && roundedFrac === lastDrawnFrac) return;
+
+    draw(actualA, actualB, roundedFrac);
+    lastDrawnA = actualA;
+    lastDrawnB = actualB;
+    lastDrawnFrac = roundedFrac;
   }
 
   // Lenis + the GSAP ticker can each nudge ScrollTrigger's onUpdate within
@@ -2168,7 +2212,7 @@
         end: "bottom bottom",
         scrub: true,
         onUpdate: function(self){
-          currentFrame = Math.round(self.progress * (TOTAL_FRAMES - 1));
+          currentFrame = self.progress * (TOTAL_FRAMES - 1);
           scheduleRender();
         }
       });
@@ -2180,8 +2224,11 @@
   function onResize(){
     resizeCanvas();
     renderCurrent();
-    if (previousRendered !== -1){
-      draw(previousRendered);
+    // Geometry changed (offsetX/offsetY/drawW/drawH) but the frame
+    // indices/blend fraction likely didn't, so renderCurrent()'s "nothing
+    // changed" check above would otherwise skip redrawing at the new size.
+    if (lastDrawnA !== -1){
+      draw(lastDrawnA, lastDrawnB, lastDrawnFrac);
     }
     ScrollTrigger.refresh();
   }
@@ -2242,7 +2289,9 @@
     preloaderBarFill.style.width = pct + "%";
   }).then(function(){
     currentFrame = 0;
-    previousRendered = -1;
+    lastDrawnA = -1;
+    lastDrawnB = -1;
+    lastDrawnFrac = -1;
     renderCurrent();
 
     loadPool(phase2Indices, null);
