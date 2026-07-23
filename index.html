@@ -54,16 +54,14 @@
      it starts issuing these requests one pool at a time. fetchpriority
      pushes them ahead of lower-priority page assets in the browser's own
      request queue; harmless no-op hint on browsers that don't support it. -->
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0001.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0002.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0003.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0004.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0005.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0008.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0009.webp?v=4">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0010.webp?v=4">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0001.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0002.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0003.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0004.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0005.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp?v=3">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0008.webp?v=3">
 <style>
   html{
     background:#02040A;
@@ -1941,34 +1939,20 @@
 
   gsap.registerPlugin(ScrollTrigger);
 
-  // 241 frames, not 122 — every other frame is a genuine motion-
-  // interpolated (ffmpeg minterpolate) in-between frame, not a duplicate
-  // or a blend. This is what lets the hero play as one continuous motion
-  // on a hard frame-swap with no cross-fade needed: each step is ~14.5px
-  // of scroll instead of ~29px, small enough that the swap itself stops
-  // being perceptible, and with no blending there's no ghosting/blur on
-  // fast-moving content either.
-  var TOTAL_FRAMES = 241;
+  var TOTAL_FRAMES = 122;
   // Only this many frames block the preloader — the rest stream in the
-  // background afterward. Kept at roughly the same ABSOLUTE byte budget
-  // as the 122-frame version's PHASE1_COUNT=8 (~900KB), not the same
-  // fraction — load speed and frame density are separate concerns, and
-  // doubling the blocking batch just because the total sequence doubled
-  // would undo the load-time work from recent rounds. If a fast scroll
-  // outruns the background stream for the other ~231 frames,
-  // findClosestLoaded() below degrades gracefully to the nearest frame
-  // that IS ready rather than failing.
-  var PHASE1_COUNT = 10;
-  // High enough that all of phase 1 fires as a single parallel batch.
-  var CONCURRENCY = 10;
-  // Phase 2 (the ~231 frames streaming in after unlock) gets a much
-  // lower concurrency than phase 1: this competes with actual
-  // scrolling/rendering happening in real time, which is exactly when a
-  // decode burst is most noticeable. A previous version of this same
-  // 241-frame setup used a high concurrency here and it measurably froze
-  // the page for multiple seconds during a fast scroll — this is the
-  // fix, verified against that specific failure.
-  var BACKGROUND_CONCURRENCY = 4;
+  // background afterward. Cut further from 12: getting to "interactive"
+  // fast matters more than having the whole sequence ready up front, and
+  // if the user scrolls ahead of the background batch, findClosestLoaded()
+  // below already degrades gracefully to the nearest frame that IS ready
+  // rather than failing. At ~110KB/frame this is roughly 900KB blocking
+  // the preloader instead of ~1.3MB.
+  var PHASE1_COUNT = 8;
+  // High enough that all of phase 1 fires as a single parallel batch
+  // instead of multiple waves — the site's HTTP/2 connection to Vercel's
+  // edge multiplexes many concurrent requests cheaply, so this isn't
+  // fighting a per-connection limit the way it would over HTTP/1.1.
+  var CONCURRENCY = 8;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
@@ -2003,11 +1987,12 @@
 
   // Frame files are served with a 1-year immutable Cache-Control (see
   // vercel.json). Any browser that cached content under these filenames
-  // from a previous deploy will never re-fetch them on its own under that
-  // policy, so the version query param is what forces a fresh fetch.
+  // from a previous deploy — including the 241-frame interpolated set
+  // this reverts away from — will never re-fetch them on its own under
+  // that policy, so the version query param is what forces a fresh fetch.
   // Bump it again any time frame file content changes under the same
-  // filenames — v3 was the 122-frame set, v4 is this 241-frame set.
-  var FRAME_ASSET_VERSION = "4";
+  // filenames.
+  var FRAME_ASSET_VERSION = "3";
 
   function frameUrl(index){
     return "./frames/frame_" + String(index + 1).padStart(4, "0") + ".webp?v=" + FRAME_ASSET_VERSION;
@@ -2041,7 +2026,7 @@
     });
   }
 
-  function loadPool(indices, onEach, concurrency){
+  function loadPool(indices, onEach){
     return new Promise(function(resolveAll){
       var next = 0;
       var active = 0;
@@ -2051,7 +2036,7 @@
       if (total === 0){ resolveAll(); return; }
 
       function pump(){
-        while (active < concurrency && next < total){
+        while (active < CONCURRENCY && next < total){
           var idx = indices[next++];
           active++;
           loadImage(idx).then(function(){
@@ -2108,6 +2093,12 @@
     ctx.imageSmoothingQuality = "medium";
 
     computeCover();
+
+    // Every cached offscreen frame below was resampled for the previous
+    // cssW/cssH/DPR geometry — once any of that changes (resize, rotate,
+    // moving the window to a different-DPR display), those cached bitmaps
+    // are the wrong size and must be rebuilt, not reused.
+    scaledCache.clear();
   }
 
   function findClosestLoaded(target){
@@ -2127,39 +2118,114 @@
     return -1;
   }
 
-  // Plain hard-cut draw, straight from the decoded source — no cross-
-  // fade, no blur, and (after measuring it made things drastically worse)
-  // no offscreen-canvas cache either. That cache made sense for the
-  // 122-frame cross-fade version, where the same one or two frames get
-  // redrawn repeatedly as the blend fraction changes. It does NOT make
-  // sense here: with 241 frames and a plain hard cut, a normal scroll
-  // moves through most of the sequence once, so a small bounded cache
-  // gets a near-100% miss rate — every "miss" was creating a brand-new
-  // canvas element and 2D context just to draw into it once and get
-  // evicted almost immediately. That's real allocation/GC overhead added
-  // on top of the resample, not saved from it. Simple and direct wins here.
-  function draw(index){
+  // Draw-time cache: the first time a frame index is needed, its cover-fit
+  // crop is resampled once onto an offscreen canvas already sized to the
+  // live canvas's exact pixel dimensions; every later draw of that same
+  // index — extremely common, since cross-fading means most positions
+  // reuse at least one of the previous render's two frames — is then a
+  // same-size blit instead of a fresh resample of the full 1920x1080
+  // source. Same imageSmoothingQuality as the live canvas, so the pixels
+  // are identical, just computed once instead of on every draw.
+  //
+  // Bounded to a small recent-frames window (Map insertion order doubles
+  // as LRU order) rather than caching all 122 at once: besides the memory
+  // cost, iOS Safari has a hard, undocumented ceiling on total combined
+  // canvas memory per page and silently clears the oldest ones past it,
+  // which would show up as random blank flashes — worse than the lag
+  // this is fixing. Deliberately NOT paired with any idle-time
+  // prewarming this time — that's what caused the last regression here
+  // (requestIdleCallback doesn't exist in Safari, so its setTimeout
+  // fallback fired near-immediately on every scroll tick, adding work
+  // instead of getting ahead of it). This cache is purely reactive.
+  var SCALED_CACHE_LIMIT = 32;
+  var scaledCache = new Map();
+
+  function getScaledFrame(index){
+    var cached = scaledCache.get(index);
+    if (cached){
+      // Re-insert to mark as most-recently-used.
+      scaledCache.delete(index);
+      scaledCache.set(index, cached);
+      return cached;
+    }
+
     var img = frames[index];
-    if (!img) return;
+    if (!img) return null;
+
+    var off = document.createElement("canvas");
+    off.width = canvas.width;
+    off.height = canvas.height;
+    var octx = off.getContext("2d", { alpha: false });
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = "medium";
+    // off has no DPR transform applied (unlike ctx), so the same cover-fit
+    // geometry has to be expressed directly in device pixels here.
+    octx.drawImage(img, offsetX * DPR, offsetY * DPR, drawW * DPR, drawH * DPR);
+
+    scaledCache.set(index, off);
+    if (scaledCache.size > SCALED_CACHE_LIMIT){
+      scaledCache.delete(scaledCache.keys().next().value);
+    }
+    return off;
+  }
+
+  // Cross-fades between the two frames the current scroll position falls
+  // between, across the whole of that interval, instead of hard-cutting
+  // on whichever one Math.round() lands on. With only 122 stills covering
+  // the whole hero, a hard cut holds each frame for ~29px of scroll then
+  // jumps — this makes it read as one continuous motion instead.
+  function draw(indexA, indexB, blend){
+    var scaledA = getScaledFrame(indexA);
+    if (!scaledA) return;
     // No clearRect: computeCover() is a "cover" fit (drawW/drawH are
     // always >= cssW/cssH — one offset is 0, the other is a <=0 crop
     // shift, never a positive gap), so drawImage always paints over the
     // entire canvas already. Clearing first was pure redundant per-frame
     // work at full canvas size, on top of the draw that immediately
     // overwrites it anyway.
-    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+    // scaledA/B are already device-pixel-sized to match canvas.width/
+    // height exactly, so drawing at cssW x cssH through ctx's DPR
+    // transform is a 1:1 blit, not a resample.
+    ctx.globalAlpha = 1;
+    ctx.drawImage(scaledA, 0, 0, cssW, cssH);
+    if (indexB !== indexA && blend > 0){
+      var scaledB = getScaledFrame(indexB);
+      if (scaledB){
+        ctx.globalAlpha = blend;
+        ctx.drawImage(scaledB, 0, 0, cssW, cssH);
+        ctx.globalAlpha = 1;
+      }
+    }
   }
 
-  var previousRendered = -1;
+  var lastDrawnA = -1, lastDrawnB = -1, lastDrawnBlend = -1;
 
   function renderCurrent(){
-    var target = Math.round(currentFrame);
-    var actual = findClosestLoaded(target);
-    if (actual === -1) return;
-    if (actual !== previousRendered){
-      draw(actual);
-      previousRendered = actual;
-    }
+    // currentFrame is the raw, unrounded scroll position in frame units.
+    var raw = currentFrame;
+    if (raw < 0) raw = 0;
+    if (raw > TOTAL_FRAMES - 1) raw = TOTAL_FRAMES - 1;
+
+    var a = Math.floor(raw);
+    var frac = raw - a;
+    var b = a + 1;
+    if (b > TOTAL_FRAMES - 1){ b = a; frac = 0; }
+
+    var actualA = findClosestLoaded(a);
+    if (actualA === -1) return;
+    var actualB = loadedFlags[b] ? b : actualA;
+    if (actualB === actualA) frac = 0;
+
+    // Two decimal places is plenty of resolution for a visible blend and
+    // kills float-noise redraws while visually stationary.
+    var roundedBlend = Math.round(frac * 100) / 100;
+
+    if (actualA === lastDrawnA && actualB === lastDrawnB && roundedBlend === lastDrawnBlend) return;
+
+    draw(actualA, actualB, roundedBlend);
+    lastDrawnA = actualA;
+    lastDrawnB = actualB;
+    lastDrawnBlend = roundedBlend;
   }
 
   // Lenis + the GSAP ticker can each nudge ScrollTrigger's onUpdate within
@@ -2231,11 +2297,11 @@
   function onResize(){
     resizeCanvas();
     renderCurrent();
-    // Geometry changed (offsetX/offsetY/drawW/drawH) but the frame index
-    // likely didn't, so renderCurrent()'s "nothing changed" check above
-    // would otherwise skip redrawing at the new size.
-    if (previousRendered !== -1){
-      draw(previousRendered);
+    // Geometry changed (offsetX/offsetY/drawW/drawH) but the frame
+    // pair/blend likely didn't, so renderCurrent()'s "nothing changed"
+    // check above would otherwise skip redrawing at the new size.
+    if (lastDrawnA !== -1){
+      draw(lastDrawnA, lastDrawnB, lastDrawnBlend);
     }
     ScrollTrigger.refresh();
   }
@@ -2294,12 +2360,14 @@
     var pct = Math.round((done / total) * 100);
     preloaderPercent.textContent = pct + "%";
     preloaderBarFill.style.width = pct + "%";
-  }, CONCURRENCY).then(function(){
+  }).then(function(){
     currentFrame = 0;
-    previousRendered = -1;
+    lastDrawnA = -1;
+    lastDrawnB = -1;
+    lastDrawnBlend = -1;
     renderCurrent();
 
-    loadPool(phase2Indices, null, BACKGROUND_CONCURRENCY);
+    loadPool(phase2Indices, null);
 
     preloader.style.transition = "opacity 400ms ease";
     preloader.style.opacity = "0";
