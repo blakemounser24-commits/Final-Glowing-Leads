@@ -1962,11 +1962,23 @@
   // failing. Scaled up from 20 to keep roughly the same fraction of the
   // (now larger) sequence loaded before unlock.
   var PHASE1_COUNT = 40;
-  // High enough that all of phase 1 fires as a single parallel batch
-  // instead of several waves — the site's HTTP/2 connection to Vercel's
-  // edge multiplexes many concurrent requests cheaply, so this isn't
-  // fighting a per-connection limit the way it would over HTTP/1.1.
-  var CONCURRENCY = 40;
+  // Deliberately NOT set to 40 to match PHASE1_COUNT. This many
+  // simultaneous fetch+decode operations landing in the same burst was
+  // measurably freezing the page for multiple seconds (visible in a
+  // screen recording) whenever a fast scroll pushed past the hero while
+  // that many decodes/GC allocations were in flight — the browser can
+  // issue that many requests fine, but decoding that many 1920x1080
+  // images back-to-back is real, bursty main-thread work regardless of
+  // count. Phase 1 still finishes plenty fast at this concurrency; it
+  // just spreads the burst out instead of dumping it all at once.
+  var CONCURRENCY = 12;
+  // Phase 2 (the 201 frames streaming in after unlock) gets an even lower
+  // concurrency than phase 1: unlike phase 1, this is competing with
+  // actual scrolling/rendering happening in real time, which is exactly
+  // when a decode burst is most noticeable. Slower to finish loading in
+  // the background, but it no longer steals the main thread from the
+  // scroll the user is actively doing.
+  var BACKGROUND_CONCURRENCY = 4;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
@@ -2029,7 +2041,7 @@
     });
   }
 
-  function loadPool(indices, onEach){
+  function loadPool(indices, onEach, concurrency){
     return new Promise(function(resolveAll){
       var next = 0;
       var active = 0;
@@ -2039,7 +2051,7 @@
       if (total === 0){ resolveAll(); return; }
 
       function pump(){
-        while (active < CONCURRENCY && next < total){
+        while (active < concurrency && next < total){
           var idx = indices[next++];
           active++;
           loadImage(idx).then(function(){
@@ -2273,12 +2285,12 @@
     var pct = Math.round((done / total) * 100);
     preloaderPercent.textContent = pct + "%";
     preloaderBarFill.style.width = pct + "%";
-  }).then(function(){
+  }, CONCURRENCY).then(function(){
     currentFrame = 0;
     previousRendered = -1;
     renderCurrent();
 
-    loadPool(phase2Indices, null);
+    loadPool(phase2Indices, null, BACKGROUND_CONCURRENCY);
 
     preloader.style.transition = "opacity 400ms ease";
     preloader.style.opacity = "0";
