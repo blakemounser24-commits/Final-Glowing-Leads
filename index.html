@@ -2024,11 +2024,13 @@
   // Desktop's 3500px spacer exists to give scroll-scrubbing enough room to
   // spread 122 frames over. Mobile doesn't scroll-scrub at all anymore
   // (setupMobileIntro() below) — the frames play on a fixed timer, not on
-  // scroll position — so that same 3500px just became a long stretch of
-  // empty scrolling between the intro finishing and the next section
-  // appearing, for no reason. 200vh keeps a normal-feeling hero-sized
-  // scroll instead.
-  if (isMobile) spacer.style.height = "200vh";
+  // scroll position — so that distance is just dead space between the
+  // intro finishing and the next section appearing, for no reason. Cut
+  // further to 130vh per feedback: close to a single swipe's worth, while
+  // still leaving the hero-handoff text fade-out (a separate, scroll-tied
+  // effect in the site-sections script below) a little real room to
+  // transition in rather than snapping instantly.
+  if (isMobile) spacer.style.height = "130vh";
   var preloader = document.getElementById("preloader");
   var preloaderPercent = document.getElementById("preloader-percent");
   var preloaderBarFill = document.getElementById("preloader-bar-fill");
