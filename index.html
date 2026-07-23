@@ -2021,6 +2021,14 @@
   // is what actually cuts scroll-to-paint latency on phones.
   var ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
   var spacer = document.getElementById("hero-spacer");
+  // Desktop's 3500px spacer exists to give scroll-scrubbing enough room to
+  // spread 122 frames over. Mobile doesn't scroll-scrub at all anymore
+  // (setupMobileIntro() below) — the frames play on a fixed timer, not on
+  // scroll position — so that same 3500px just became a long stretch of
+  // empty scrolling between the intro finishing and the next section
+  // appearing, for no reason. 200vh keeps a normal-feeling hero-sized
+  // scroll instead.
+  if (isMobile) spacer.style.height = "200vh";
   var preloader = document.getElementById("preloader");
   var preloaderPercent = document.getElementById("preloader-percent");
   var preloaderBarFill = document.getElementById("preloader-bar-fill");
@@ -2403,6 +2411,11 @@
     }
   }
 
+  // Set by setupMobileIntro() below once it's wired up; called once ALL
+  // frames (not just phase 1) finish loading, so the one-shot playback
+  // never races ahead of frames that aren't there yet.
+  var notifyMobileFramesReady = null;
+
   // ---- Mobile: one-shot autoplay instead of scroll-scrubbing ----
   // Same nav/heading reveal as setupOverlayReveal above, just triggered by
   // the autoplay finishing instead of a scroll-progress threshold. Once
@@ -2423,13 +2436,20 @@
         .to(".hero-cta", { opacity: 1, y: 0, duration: 0.9 }, 0.92);
 
       var played = false;
+      var wantsToPlay = false;
+      // Phase 1 (8 frames) is enough to unlock the preloader fast, but
+      // playing the *whole* 122-frame sequence in 2.6s needs *all* of
+      // them decoded first — otherwise playback races ahead of whatever
+      // phase 2 hasn't streamed in yet and falls back to repeating
+      // whichever frame IS loaded, which is exactly the jitter that got
+      // reported around the brighter, busier part of the sequence. Only
+      // phase 1 is guaranteed done by the time this function runs.
+      var framesReady = false;
       var playback = { frame: 0 };
 
-      function playOnce(){
-        if (played) return;
+      function tryPlay(){
+        if (played || !wantsToPlay || !framesReady) return;
         played = true;
-        document.removeEventListener("touchstart", playOnce);
-        window.removeEventListener("scroll", playOnce);
 
         gsap.to(playback, {
           frame: TOTAL_FRAMES - 1,
@@ -2445,13 +2465,26 @@
         });
       }
 
+      function requestPlay(){
+        if (wantsToPlay) return;
+        wantsToPlay = true;
+        document.removeEventListener("touchstart", requestPlay);
+        window.removeEventListener("scroll", requestPlay);
+        tryPlay();
+      }
+
       // touchstart covers an actual touch; scroll is a fallback for the
       // rare case of a mouse/trackpad on a touch-classified device (or a
       // browser that doesn't fire touchstart for the gesture that started
       // the scroll). Neither calls preventDefault, so normal scrolling is
       // completely unaffected either way.
-      document.addEventListener("touchstart", playOnce, { once: true, passive: true });
-      window.addEventListener("scroll", playOnce, { once: true, passive: true });
+      document.addEventListener("touchstart", requestPlay, { once: true, passive: true });
+      window.addEventListener("scroll", requestPlay, { once: true, passive: true });
+
+      notifyMobileFramesReady = function(){
+        framesReady = true;
+        tryPlay();
+      };
     } catch (err){
       console.error("[hero] Mobile intro failed to initialize:", err);
     }
@@ -2513,7 +2546,9 @@
 
     if (isMobile) setupMobileIntro();
 
-    loadPool(phase2Indices, null);
+    loadPool(phase2Indices, null).then(function(){
+      if (notifyMobileFramesReady) notifyMobileFramesReady();
+    });
 
     preloader.style.transition = "opacity 400ms ease";
     preloader.style.opacity = "0";
