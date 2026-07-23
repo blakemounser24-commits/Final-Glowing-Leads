@@ -8,10 +8,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" onerror="console.error('[hero] Failed to load GSAP from CDN')"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" onerror="console.error('[hero] Failed to load ScrollTrigger from CDN')"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js" onerror="console.error('[site] Failed to load GSAP Flip from CDN')"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.25/dist/lenis.min.js" onerror="console.error('[hero] Failed to load Lenis from CDN')"></script>
+<!-- GSAP/ScrollTrigger/Flip/Lenis are now vendored in ./vendor (same exact
+     pinned versions as before — 3.12.5 / 1.3.25) instead of loaded from
+     cdnjs/jsdelivr. These are render-blocking scripts that the hero engine
+     depends on before it can start requesting a single frame image, so
+     every millisecond here is a millisecond added to time-to-first-frame.
+     Self-hosting them means the browser reuses the connection it already
+     has open to this same origin instead of paying for two more cold
+     DNS+TLS handshakes to third-party CDNs first. -->
+<script src="./vendor/gsap.min.js" onerror="console.error('[hero] Failed to load GSAP')"></script>
+<script src="./vendor/ScrollTrigger.min.js" onerror="console.error('[hero] Failed to load ScrollTrigger')"></script>
+<script src="./vendor/Flip.min.js" onerror="console.error('[site] Failed to load GSAP Flip')"></script>
+<script src="./vendor/lenis.min.js" onerror="console.error('[hero] Failed to load Lenis')"></script>
+<!-- Gets the browser fetching the very first hero frames as soon as the
+     head is parsed, in parallel with the scripts above downloading,
+     instead of waiting for them to finish and the hero engine's JS to run
+     before issuing these requests. -->
+<link rel="preload" as="image" href="./frames/frame_0001.webp">
+<link rel="preload" as="image" href="./frames/frame_0002.webp">
+<link rel="preload" as="image" href="./frames/frame_0003.webp">
 <style>
   html{
     background:#02040A;
@@ -1897,7 +1912,11 @@
   // findClosestLoaded() below already degrades gracefully to the nearest
   // frame that IS ready rather than failing.
   var PHASE1_COUNT = 20;
-  var CONCURRENCY = 12;
+  // High enough that all of phase 1 (20 frames) fires as a single parallel
+  // batch instead of two waves — the site's HTTP/2 connection to Vercel's
+  // edge multiplexes many concurrent requests cheaply, so this isn't
+  // fighting a per-connection limit the way it would over HTTP/1.1.
+  var CONCURRENCY = 20;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
