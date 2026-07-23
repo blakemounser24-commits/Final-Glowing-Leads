@@ -1890,7 +1890,14 @@
   gsap.registerPlugin(ScrollTrigger);
 
   var TOTAL_FRAMES = 122;
-  var PHASE1_COUNT = 52;
+  // Every frame loads before scroll unlocks (was 52, with the remaining 70
+  // streaming in the background after). On a slower phone connection/CPU,
+  // scrolling past frame 52 before that background batch finished meant
+  // falling back to "closest loaded frame" — a visible stutter/repeat,
+  // which is exactly the kind of lag reported on mobile. Loading
+  // everything up front costs a slightly longer preloader wait, but the
+  // scroll-scrub itself never has to guess again.
+  var PHASE1_COUNT = TOTAL_FRAMES;
   var CONCURRENCY = 12;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
@@ -1898,6 +1905,20 @@
   var frames = new Array(TOTAL_FRAMES);
   var loadedFlags = new Array(TOTAL_FRAMES);
   for (var i = 0; i < TOTAL_FRAMES; i++) { loadedFlags[i] = false; }
+
+  // Draw-time cache: the very first time a given frame index is drawn, its
+  // cover-fit crop is resampled once onto an offscreen canvas already sized
+  // to the live canvas's exact pixel dimensions; every later draw of that
+  // same index (extremely common — scrubbing rarely moves in one direction
+  // only) is then a same-size canvas blit instead of a fresh resample of
+  // the full 1920x1080 source. Same imageSmoothingQuality as before, so
+  // the pixels drawn are identical — just computed once instead of every
+  // time. Bounded to a small recent-frames window (Map insertion order
+  // doubles as LRU order) rather than caching all 122 at full device
+  // resolution, which would hold on the order of ~500MB+ of extra bitmap
+  // memory on a phone — a bad trade in the other direction.
+  var SCALED_CACHE_LIMIT = 24;
+  var scaledCache = new Map();
 
   var canvas = document.getElementById("hero-canvas");
   // alpha:false — every frame is a full-bleed cover-fit draw with nothing
@@ -2022,6 +2043,12 @@
     ctx.imageSmoothingQuality = "medium";
 
     computeCover();
+
+    // Every cached offscreen frame was resampled for the previous
+    // cssW/cssH/DPR geometry — once any of that changes (resize, rotate,
+    // moving the window to a different-DPR display), those cached bitmaps
+    // are the wrong size and must be rebuilt, not reused.
+    scaledCache.clear();
   }
 
   function findClosestLoaded(target){
@@ -2041,16 +2068,50 @@
     return -1;
   }
 
-  function draw(index){
+  function getScaledFrame(index){
+    var cached = scaledCache.get(index);
+    if (cached){
+      // Re-insert to mark as most-recently-used (Map iteration order
+      // follows insertion order, so this is what makes the eviction below
+      // an LRU rather than a plain FIFO).
+      scaledCache.delete(index);
+      scaledCache.set(index, cached);
+      return cached;
+    }
+
     var img = frames[index];
-    if (!img) return;
+    if (!img) return null;
+
+    var off = document.createElement("canvas");
+    off.width = canvas.width;
+    off.height = canvas.height;
+    var octx = off.getContext("2d", { alpha: false });
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = "medium";
+    // off has no DPR transform applied (unlike ctx), so the same cover-fit
+    // geometry has to be expressed directly in device pixels here.
+    octx.drawImage(img, offsetX * DPR, offsetY * DPR, drawW * DPR, drawH * DPR);
+
+    scaledCache.set(index, off);
+    if (scaledCache.size > SCALED_CACHE_LIMIT){
+      scaledCache.delete(scaledCache.keys().next().value);
+    }
+    return off;
+  }
+
+  function draw(index){
+    var scaled = getScaledFrame(index);
+    if (!scaled) return;
     // No clearRect: computeCover() is a "cover" fit (drawW/drawH are
     // always >= cssW/cssH — one offset is 0, the other is a <=0 crop
     // shift, never a positive gap), so drawImage always paints over the
     // entire canvas already. Clearing first was pure redundant per-frame
     // work at full canvas size, on top of the draw that immediately
     // overwrites it anyway.
-    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+    // scaled is already device-pixel-sized to match canvas.width/height
+    // exactly, so drawing it at cssW x cssH through ctx's DPR transform is
+    // a 1:1 blit, not a resample.
+    ctx.drawImage(scaled, 0, 0, cssW, cssH);
   }
 
   function renderCurrent(){
