@@ -2108,12 +2108,6 @@
     ctx.imageSmoothingQuality = "medium";
 
     computeCover();
-
-    // Every cached offscreen frame below was resampled for the previous
-    // cssW/cssH/DPR geometry — once any of that changes (resize, rotate,
-    // moving the window to a different-DPR display), those cached bitmaps
-    // are the wrong size and must be rebuilt, not reused.
-    scaledCache.clear();
   }
 
   function findClosestLoaded(target){
@@ -2133,75 +2127,27 @@
     return -1;
   }
 
-  // Draw-time cache: the first time a frame index is needed, its cover-fit
-  // crop is resampled once onto an offscreen canvas already sized to the
-  // live canvas's exact pixel dimensions; every later draw of that same
-  // index — common when scrubbing back and forth over the same range —
-  // is then a same-size blit instead of a fresh resample of the full
-  // 1920x1080 source. Same imageSmoothingQuality as the live canvas, so
-  // the pixels are identical, just computed once instead of on every draw.
-  //
-  // Bounded to a small recent-frames window (Map insertion order doubles
-  // as LRU order) rather than caching all 241 at once: besides the memory
-  // cost, iOS Safari has a hard, undocumented ceiling on total combined
-  // canvas memory per page and silently clears the oldest ones past it,
-  // which would show up as random blank flashes — worse than the lag
-  // this is fixing. Deliberately NOT paired with any idle-time
-  // prewarming — a previous version of this same cache did that, and it
-  // caused a real regression (requestIdleCallback doesn't exist in
-  // Safari, so its setTimeout fallback fired near-immediately on every
-  // scroll tick, adding work instead of getting ahead of it). This cache
-  // is purely reactive: populated on draw, nothing scheduled ahead of time.
-  var SCALED_CACHE_LIMIT = 32;
-  var scaledCache = new Map();
-
-  function getScaledFrame(index){
-    var cached = scaledCache.get(index);
-    if (cached){
-      // Re-insert to mark as most-recently-used.
-      scaledCache.delete(index);
-      scaledCache.set(index, cached);
-      return cached;
-    }
-
-    var img = frames[index];
-    if (!img) return null;
-
-    var off = document.createElement("canvas");
-    off.width = canvas.width;
-    off.height = canvas.height;
-    var octx = off.getContext("2d", { alpha: false });
-    octx.imageSmoothingEnabled = true;
-    octx.imageSmoothingQuality = "medium";
-    // off has no DPR transform applied (unlike ctx), so the same cover-fit
-    // geometry has to be expressed directly in device pixels here.
-    octx.drawImage(img, offsetX * DPR, offsetY * DPR, drawW * DPR, drawH * DPR);
-
-    scaledCache.set(index, off);
-    if (scaledCache.size > SCALED_CACHE_LIMIT){
-      scaledCache.delete(scaledCache.keys().next().value);
-    }
-    return off;
-  }
-
-  // Plain hard-cut draw — no cross-fade, no blur. With 241 real frames
-  // (119 of them genuine motion-interpolated in-betweens, not blends),
-  // each step is small enough on its own that a straight swap reads as
-  // continuous motion, with none of the ghosting a cross-fade caused on
-  // fast-moving bright content.
+  // Plain hard-cut draw, straight from the decoded source — no cross-
+  // fade, no blur, and (after measuring it made things drastically worse)
+  // no offscreen-canvas cache either. That cache made sense for the
+  // 122-frame cross-fade version, where the same one or two frames get
+  // redrawn repeatedly as the blend fraction changes. It does NOT make
+  // sense here: with 241 frames and a plain hard cut, a normal scroll
+  // moves through most of the sequence once, so a small bounded cache
+  // gets a near-100% miss rate — every "miss" was creating a brand-new
+  // canvas element and 2D context just to draw into it once and get
+  // evicted almost immediately. That's real allocation/GC overhead added
+  // on top of the resample, not saved from it. Simple and direct wins here.
   function draw(index){
-    var scaled = getScaledFrame(index);
-    if (!scaled) return;
+    var img = frames[index];
+    if (!img) return;
     // No clearRect: computeCover() is a "cover" fit (drawW/drawH are
     // always >= cssW/cssH — one offset is 0, the other is a <=0 crop
     // shift, never a positive gap), so drawImage always paints over the
     // entire canvas already. Clearing first was pure redundant per-frame
     // work at full canvas size, on top of the draw that immediately
     // overwrites it anyway.
-    // scaled is already device-pixel-sized to match canvas.width/height
-    // exactly, so drawing at cssW x cssH through ctx's DPR transform is a
-    // 1:1 blit, not a resample.
-    ctx.drawImage(scaled, 0, 0, cssW, cssH);
+    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
   }
 
   var previousRendered = -1;
