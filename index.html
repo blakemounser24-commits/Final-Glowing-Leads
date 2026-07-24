@@ -2488,6 +2488,8 @@
             scheduleRender();
           },
           onComplete: function(){
+            htmlEl.classList.remove("scroll-locked");
+            bodyEl.classList.remove("scroll-locked");
             revealTl.play();
           }
         });
@@ -2498,14 +2500,24 @@
         wantsToPlay = true;
         document.removeEventListener("touchstart", requestPlay);
         window.removeEventListener("scroll", requestPlay);
+        // Re-locks scroll (the same class/mechanism the preloader itself
+        // uses) for the duration of the intro, per explicit request: the
+        // page shouldn't be scrollable until the animation has finished
+        // playing. Added synchronously inside the touchstart handler —
+        // before the touch's own scroll motion would otherwise begin —
+        // so the CSS overflow:hidden takes effect ahead of it rather than
+        // reacting after the page has already started moving.
+        htmlEl.classList.add("scroll-locked");
+        bodyEl.classList.add("scroll-locked");
         tryPlay();
       }
 
       // touchstart covers an actual touch; scroll is a fallback for the
       // rare case of a mouse/trackpad on a touch-classified device (or a
       // browser that doesn't fire touchstart for the gesture that started
-      // the scroll). Neither calls preventDefault, so normal scrolling is
-      // completely unaffected either way.
+      // the scroll) — in that fallback case specifically, scrolling has
+      // already begun by the time this fires, so the lock only stops it
+      // from continuing rather than preventing it outright.
       document.addEventListener("touchstart", requestPlay, { once: true, passive: true });
       window.addEventListener("scroll", requestPlay, { once: true, passive: true });
 
