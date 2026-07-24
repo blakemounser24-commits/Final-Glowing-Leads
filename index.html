@@ -2026,11 +2026,15 @@
   // (setupMobileIntro() below) — the frames play on a fixed timer, not on
   // scroll position — so that distance is just dead space between the
   // intro finishing and the next section appearing, for no reason. Cut
-  // further to 130vh per feedback: close to a single swipe's worth, while
-  // still leaving the hero-handoff text fade-out (a separate, scroll-tied
-  // effect in the site-sections script below) a little real room to
-  // transition in rather than snapping instantly.
-  if (isMobile) spacer.style.height = "130vh";
+  // further to 90vh per feedback. Note: this is now LESS than one
+  // viewport height, which means the separate hero-handoff text fade-out
+  // (site-sections script below, triggered at "bottom bottom" of this
+  // spacer) technically starts its transition before scroll position 0 —
+  // in practice that means the hero text may already read as very
+  // slightly faded/offset at rest, before any scrolling. If that's
+  // visible/looks off, say so and I'll adjust that trigger too rather
+  // than just this number again.
+  if (isMobile) spacer.style.height = "90vh";
   var preloader = document.getElementById("preloader");
   var preloaderPercent = document.getElementById("preloader-percent");
   var preloaderBarFill = document.getElementById("preloader-bar-fill");
