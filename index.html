@@ -61,9 +61,6 @@
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0005.webp?v=5">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp?v=5">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp?v=5">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0008.webp?v=5">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0009.webp?v=5">
-<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0010.webp?v=5">
 <style>
   html{
     background:#02040A;
@@ -2002,14 +1999,14 @@
   // for the specific bugs the first two attempts shipped with.
   var TOTAL_FRAMES = 241;
   // Only this many frames block the preloader — the rest stream in the
-  // background afterward. Kept at roughly the same ABSOLUTE byte budget
-  // as the 122-frame version's PHASE1_COUNT=8 (~900KB), not the same
-  // fraction — load speed and frame density are separate concerns. If a
-  // fast scroll outruns the background stream, findClosestLoaded() below
-  // degrades gracefully to the nearest frame that IS ready.
-  var PHASE1_COUNT = 10;
+  // background afterward. Cut further from 10: load speed and frame
+  // density are separate concerns, so this doesn't need to scale with
+  // the total frame count. If a fast scroll outruns the background
+  // stream, findClosestLoaded() below degrades gracefully to the
+  // nearest frame that IS ready.
+  var PHASE1_COUNT = 7;
   // High enough that all of phase 1 fires as a single parallel batch.
-  var CONCURRENCY = 10;
+  var CONCURRENCY = 7;
   // Phase 2 (the ~231 frames streaming in after unlock) gets a much
   // lower concurrency than phase 1: it competes with actual
   // scrolling/rendering happening in real time, which is exactly when a
