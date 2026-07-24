@@ -1696,7 +1696,7 @@
       </div>
 
       <div class="results-grid">
-        <div class="ba-slider" id="ba-slider-1" tabindex="0" role="slider" aria-label="Before and after comparison: The Houndist website" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+        <div class="ba-slider" id="ba-slider-1" tabindex="0" role="slider" aria-label="Before and after comparison: The Houndist website" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
           <img src="./results-1-before.png" alt="Before: The Houndist promotional flyer" class="ba-img ba-img-before" loading="lazy">
           <div class="ba-after-wrap">
             <img src="./results-1-after.png" alt="After: The Houndist redesigned website" class="ba-img ba-img-after" loading="lazy">
@@ -1711,7 +1711,7 @@
           </div>
         </div>
 
-        <div class="ba-slider" id="ba-slider-2" tabindex="0" role="slider" aria-label="Before and after comparison: Deborah Hill and Co website" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+        <div class="ba-slider" id="ba-slider-2" tabindex="0" role="slider" aria-label="Before and after comparison: Deborah Hill and Co website" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
           <img src="./results-2-before.png" alt="Before: Deborah Hill and Co original website" class="ba-img ba-img-before" loading="lazy">
           <div class="ba-after-wrap">
             <img src="./results-2-after.png" alt="After: Deborah Hill and Co redesigned website" class="ba-img ba-img-after" loading="lazy">
@@ -3243,14 +3243,14 @@
     var handle = root.querySelector(".ba-handle");
     if (!afterWrap || !handle) return;
 
-    var pos = 50;
+    var pos = 100;
     function setPos(p){
       pos = Math.max(0, Math.min(100, p));
       afterWrap.style.clipPath = "inset(0 " + (100 - pos) + "% 0 0)";
       handle.style.left = pos + "%";
       root.setAttribute("aria-valuenow", String(Math.round(pos)));
     }
-    setPos(50);
+    setPos(100);
 
     function posFromClientX(clientX){
       var rect = root.getBoundingClientRect();
