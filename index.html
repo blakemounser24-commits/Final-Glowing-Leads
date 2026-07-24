@@ -2444,10 +2444,20 @@
     try {
       var revealTl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
 
+      // .mobile-menu-toggle (the hamburger button) is the ONLY way to
+      // reach nav links on mobile — .hero-nav-links is display:none below
+      // 720px. It has its own separate reveal in the site-sections script
+      // (setupMobileToggleReveal) tuned to the OLD scroll-scrubbing
+      // hero's 75%-scroll threshold; that threshold has nothing to do
+      // with this touch-triggered timeline, so the toggle was staying
+      // invisible through the entire mobile experience. Included here so
+      // it reveals in step with the rest of the nav instead — that
+      // function now skips itself on mobile (see its own comment).
       revealTl
         .to(".hero-nav-links a", { opacity: 1, y: 0, duration: 0.9, stagger: 0.07 }, 0)
         .to(".hero-nav-cta", { opacity: 1, y: 0, duration: 0.9 }, 0.1)
         .to(".hero-nav-logo", { opacity: 1, y: 0, duration: 0.9 }, 0.22)
+        .to(".mobile-menu-toggle", { opacity: 1, y: 0, duration: 0.9 }, 0.22)
         .to(".hero-heading", { opacity: 1, y: 0, duration: 1.2, ease: "power2.out" }, 0.4)
         .to(".hero-subtitle", { opacity: 1, y: 0, duration: 0.9 }, 0.62)
         .to(".hero-accent-line", { opacity: 1, scaleX: 1, duration: 0.8, ease: "power2.inOut" }, 0.78)
@@ -2763,11 +2773,22 @@
   // reveal (logo/CTA fade in once scroll crosses 75% through the hero) —
   // a separate, independent ScrollTrigger rather than editing the hero
   // script's own timeline, but tuned to the same threshold so the toggle
-  // doesn't sit alone as the only visible nav element beforehand. ----
+  // doesn't sit alone as the only visible nav element beforehand.
+  //
+  // Skips itself entirely on mobile (touch-primary, <=820px): the hero's
+  // own script now drives the hero differently there (a touch-triggered
+  // one-shot intro, not scroll-scrubbing — see setupMobileIntro), and
+  // reveals the toggle itself as part of that same timeline. This
+  // scroll-progress-based version would otherwise fight it, revealing
+  // (or hiding) the toggle independently based on a threshold that no
+  // longer means anything on that path. ----
   (function setupMobileToggleReveal(){
     var toggle = document.getElementById("mobile-menu-toggle");
     var spacer = document.getElementById("hero-spacer");
     if (!toggle || !spacer) return;
+
+    var isMobile = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches) && window.innerWidth <= 820;
+    if (isMobile) return;
 
     if (reduceMotion){
       gsap.set(toggle, { opacity: 1, y: 0 });
