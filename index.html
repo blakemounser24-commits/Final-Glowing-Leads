@@ -2464,8 +2464,11 @@
   // ---- "Scroll to Explore" hint — purely additive, isolated from
   // everything above. Fades in shortly after load (sits behind the
   // preloader either way, so no visible flash), fades out the moment the
-  // user does anything scroll-like, on both mobile and desktop. ----
+  // user does anything scroll-like. Desktop only — mobile isn't driven by
+  // scroll at all anymore (see setupMobileIntro, touch-triggered instead),
+  // so a "scroll to explore" hint there would be actively misleading. ----
   (function setupScrollHint(){
+    if (isMobile) return;
     var hint = document.getElementById("hero-scroll-hint");
     if (!hint) return;
     var hidden = false;
