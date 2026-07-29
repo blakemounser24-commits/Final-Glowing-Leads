@@ -2007,14 +2007,26 @@
   var PHASE1_COUNT = 7;
   // High enough that all of phase 1 fires as a single parallel batch.
   var CONCURRENCY = 7;
-  // Phase 2 (the ~231 frames streaming in after unlock) gets a much
-  // lower concurrency than phase 1: it competes with actual
-  // scrolling/rendering happening in real time, which is exactly when a
-  // decode burst is most noticeable. A previous version of this same
-  // 241-frame setup used a high concurrency here and it measurably froze
-  // the page for multiple seconds during a fast scroll — this value is
-  // the fix, verified against that specific failure.
+  // Phase 2 (the ~234 frames streaming in after unlock) gets a much
+  // lower concurrency than phase 1 ON DESKTOP: it competes with actual
+  // scrolling/rendering happening in real time there, which is exactly
+  // when a decode burst is most noticeable. A previous version of this
+  // same 241-frame setup used a high concurrency unconditionally and it
+  // measurably froze the page for multiple seconds during a fast scroll.
   var BACKGROUND_CONCURRENCY = 4;
+  // Mobile doesn't have that problem during THIS specific wait: scroll is
+  // locked (see setupMobileIntro) and nothing else is animating until the
+  // one-shot intro actually starts, so there's no scroll-rendering for a
+  // decode burst to fight. But setupMobileIntro also waits for every
+  // phase-2 frame to finish loading before it'll start playing — at
+  // BACKGROUND_CONCURRENCY=4 that's 20-30+ seconds for ~30MB of
+  // remaining frames, which reads as the page being completely broken
+  // (locked, frozen, no feedback) rather than "still loading". A higher,
+  // mobile-only concurrency for this specific pool cuts that wait
+  // dramatically without reproducing the conditions that caused the
+  // original freeze (that happened DURING active scrolling; this happens
+  // while scrolling is deliberately blocked).
+  var MOBILE_PHASE2_CONCURRENCY = 20;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
@@ -2515,7 +2527,7 @@
 
     if (isMobile) setupMobileIntro();
 
-    loadPool(phase2Indices, null, BACKGROUND_CONCURRENCY).then(function(){
+    loadPool(phase2Indices, null, isMobile ? MOBILE_PHASE2_CONCURRENCY : BACKGROUND_CONCURRENCY).then(function(){
       if (notifyMobileFramesReady) notifyMobileFramesReady();
     });
 
