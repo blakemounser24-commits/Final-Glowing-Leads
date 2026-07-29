@@ -2372,11 +2372,6 @@
     }
   }
 
-  // Set by setupMobileIntro() below once it's wired up; called once ALL
-  // frames (not just phase 1) finish loading, so the one-shot playback
-  // never races ahead of frames that aren't there yet.
-  var notifyMobileFramesReady = null;
-
   // ---- Mobile: one-shot autoplay instead of scroll-scrubbing ----
   // Same nav/heading reveal as setupOverlayReveal above, just triggered by
   // the autoplay finishing instead of a scroll-progress threshold. Once
@@ -2407,19 +2402,19 @@
         .to(".hero-cta", { opacity: 1, y: 0, duration: 0.9 }, 0.92);
 
       var played = false;
-      var wantsToPlay = false;
-      // Phase 1 (8 frames) is enough to unlock the preloader fast, but
-      // playing the *whole* 122-frame sequence in 2.6s needs *all* of
-      // them decoded first — otherwise playback races ahead of whatever
-      // phase 2 hasn't streamed in yet and falls back to repeating
-      // whichever frame IS loaded, which is exactly the jitter that got
-      // reported around the brighter, busier part of the sequence. Only
-      // phase 1 is guaranteed done by the time this function runs.
-      var framesReady = false;
       var playback = { frame: 0 };
 
+      // Starts the instant you touch — no waiting for phase 2 to finish
+      // loading first. That wait used to be here specifically to stop
+      // playback from racing ahead of frames phase 2 hadn't streamed in
+      // yet (falls back to repeating the nearest loaded frame, which
+      // read as jitter). But at MOBILE_PHASE2_CONCURRENCY the remaining
+      // frames load fast enough to mostly keep pace with the 2.6s
+      // playback anyway, and a multi-second frozen wait after touching —
+      // with zero visual feedback — reads as far more broken than an
+      // occasional held frame does. Instant response wins this trade-off.
       function tryPlay(){
-        if (played || !wantsToPlay || !framesReady) return;
+        if (played) return;
         played = true;
 
         gsap.to(playback, {
@@ -2439,8 +2434,6 @@
       }
 
       function requestPlay(){
-        if (wantsToPlay) return;
-        wantsToPlay = true;
         document.removeEventListener("touchstart", requestPlay);
         window.removeEventListener("scroll", requestPlay);
         // Re-locks scroll (the same class/mechanism the preloader itself
@@ -2463,11 +2456,6 @@
       // from continuing rather than preventing it outright.
       document.addEventListener("touchstart", requestPlay, { once: true, passive: true });
       window.addEventListener("scroll", requestPlay, { once: true, passive: true });
-
-      notifyMobileFramesReady = function(){
-        framesReady = true;
-        tryPlay();
-      };
     } catch (err){
       console.error("[hero] Mobile intro failed to initialize:", err);
     }
@@ -2527,9 +2515,7 @@
 
     if (isMobile) setupMobileIntro();
 
-    loadPool(phase2Indices, null, isMobile ? MOBILE_PHASE2_CONCURRENCY : BACKGROUND_CONCURRENCY).then(function(){
-      if (notifyMobileFramesReady) notifyMobileFramesReady();
-    });
+    loadPool(phase2Indices, null, isMobile ? MOBILE_PHASE2_CONCURRENCY : BACKGROUND_CONCURRENCY);
 
     preloader.style.transition = "opacity 400ms ease";
     preloader.style.opacity = "0";
