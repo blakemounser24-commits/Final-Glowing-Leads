@@ -2409,18 +2409,24 @@
   //
   // Desktop is different: reports of the hero being "laggy... like it
   // hasn't loaded yet" on some page loads but not others is exactly what
-  // a fast connection vs. a slow one looks like here — on a slow
-  // connection, the small blocking batch finishes, scroll unlocks, and
-  // the other ~234 frames are still streaming in the background when
-  // scrolling starts, so findClosestLoaded() below has to fall back to
-  // repeating whichever frame IS ready. A fixed frame count can never
-  // fully solve this because it can't know the visitor's connection
-  // speed — waiting for the ENTIRE sequence to finish, whatever that
-  // actually takes on THAT connection, is the only way to guarantee it
-  // never happens, which is what was explicitly asked for. The existing
-  // preloader percentage already reflects genuine progress either way,
-  // not a fake/fixed delay.
-  var PHASE1_COUNT = isMobile ? 7 : TOTAL_FRAMES;
+  // a fast connection vs. a slow one looks like when the blocking batch
+  // is small — on a slow connection, scroll unlocks with most of the
+  // sequence still streaming in the background, so findClosestLoaded()
+  // below has to fall back to repeating whichever frame IS ready.
+  // Waiting for literally 100% (as this was set to for a while) is the
+  // only way to make that risk exactly zero, but it also makes the wait
+  // itself as long as the slowest possible connection, with no way to
+  // shorten it further — raising CONCURRENCY and preloading everything
+  // in <head> both hit a real ceiling there, confirmed by directly
+  // timing it. Per explicit request to accept a small amount of that
+  // risk back in exchange for a shorter wait: 85% (not literally every
+  // frame) unlocks scroll sooner, leaving only the last ~15% to finish
+  // in the background — a much smaller tail than the original small-
+  // batch design (which left ~97% still streaming), so the window where
+  // a frame might actually be missing is far shorter too. The existing
+  // preloader percentage still reflects genuine progress, not a
+  // fake/fixed delay.
+  var PHASE1_COUNT = isMobile ? 7 : Math.round(TOTAL_FRAMES * 0.85);
   // Only ever runs while scroll is still locked (preloader hasn't hidden
   // yet) on both platforms, so there's no competing scroll-render work
   // for a decode burst to fight here — safe to be higher than the 7 this
@@ -2433,17 +2439,18 @@
   // no downside since nothing else is rendering/scrolling yet to fight
   // with. Going meaningfully higher than this stops helping on a
   // bandwidth-constrained connection (the bottleneck becomes total bytes
-  // over the wire, not how many requests are in flight) — a real further
-  // cut to the wait requires either unlocking before literally every
-  // frame is in (small risk of the old "still loading" stutter coming
-  // back) or shrinking the frames themselves.
+  // over the wire, not how many requests are in flight).
   var CONCURRENCY = 48;
-  // Phase 2 (the ~234 frames streaming in after unlock) gets a much
-  // lower concurrency than phase 1 ON DESKTOP: it competes with actual
-  // scrolling/rendering happening in real time there, which is exactly
-  // when a decode burst is most noticeable. A previous version of this
-  // same 241-frame setup used a high concurrency unconditionally and it
-  // measurably froze the page for multiple seconds during a fast scroll.
+  // Phase 2 (the remaining ~15% of frames streaming in after unlock on
+  // desktop now that PHASE1_COUNT isn't literally everything) gets a
+  // much lower concurrency than phase 1: it competes with actual
+  // scrolling/rendering happening in real time, which is exactly when a
+  // decode burst is most noticeable. A previous version of this same
+  // 241-frame setup used a high concurrency unconditionally here and it
+  // measurably froze the page for multiple seconds during a fast scroll
+  // — keeping this low is deliberate, not an oversight. Only ~36 frames
+  // need to finish this way now (vs. ~234 when the blocking batch was
+  // small), so this tail should clear quickly regardless.
   var BACKGROUND_CONCURRENCY = 4;
   // Mobile doesn't have that problem during THIS specific wait: scroll is
   // locked (see setupMobileIntro) and nothing else is animating until the
