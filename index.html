@@ -88,7 +88,7 @@
      out of our control, but the network round-trip for the page itself
      no longer has to happen after the click. Low priority so it never
      competes with anything the hero needs. -->
-<link rel="prefetch" href="https://calendly.com/glowingleads/free-15-minute-consultation?text_color=0069ff&primary_color=1a1a1a">
+<link rel="prefetch" href="https://calendly.com/glowingleads/free-15-minute-consultation?background_color=02040a&text_color=f3efe6&primary_color=7aa2ff">
 
 <style>
   html{
@@ -2803,7 +2803,12 @@
         // overlay when it's actually available.
         if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
         e.preventDefault();
-        Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation?text_color=0069ff&primary_color=1a1a1a" });
+        // background/text/primary match the site's own palette exactly:
+        // #02040A is the same near-black used for every section background,
+        // #f3efe6 the same warm off-white used for body text, #7aa2ff the
+        // same electric-blue accent used for buttons/links/borders
+        // throughout — see the .consult-btn / accent color rules above.
+        Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation?background_color=02040a&text_color=f3efe6&primary_color=7aa2ff" });
       });
     });
   })();
