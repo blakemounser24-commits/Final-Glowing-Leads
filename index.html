@@ -1882,6 +1882,15 @@
     .marquee-wrap{ grid-template-columns:1fr; height:520px; }
     .marquee-col:nth-child(2){ display:none; }
   }
+
+  /* Calendly's own popup overlay ships with overflow-y:auto by default
+     so the whole modal can scroll on very small viewports — but that
+     means it always shows a scrollbar, even on desktop where all the
+     popup content already fits the viewport with nothing to actually
+     scroll to. Hides the scrollbar itself only; genuine scrolling still
+     works underneath it if content ever doesn't fit on a small screen. */
+  .calendly-overlay{ scrollbar-width:none; }
+  .calendly-overlay::-webkit-scrollbar{ display:none; width:0; height:0; }
 </style>
 </head>
 <body class="scroll-locked">
