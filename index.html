@@ -46,14 +46,18 @@
 <script src="./vendor/gsap.min.js" onerror="console.error('[hero] Failed to load GSAP')"></script>
 <script src="./vendor/ScrollTrigger.min.js" onerror="console.error('[hero] Failed to load ScrollTrigger')"></script>
 <script src="./vendor/lenis.min.js" onerror="console.error('[hero] Failed to load Lenis')"></script>
-<!-- Preload every frame in the hero's fast-load batch (matches
-     PHASE1_COUNT in the hero script below) so the browser's preload
-     scanner puts all of them in flight the moment <head> is parsed —
-     genuinely parallel over HTTP/2 — instead of waiting for the scripts
-     above to download and execute and the hero engine's JS to run before
-     it starts issuing these requests one pool at a time. fetchpriority
-     pushes them ahead of lower-priority page assets in the browser's own
-     request queue; harmless no-op hint on browsers that don't support it. -->
+<!-- Preload every single hero frame so the browser's preload scanner
+     puts all 241 in flight the moment <head> is parsed — genuinely
+     parallel over HTTP/2 — instead of waiting for the vendor scripts
+     above to download+execute and the deeply nested hero script tag
+     further down the body to actually run before it starts issuing
+     these requests. Desktop now waits for literally all of them before
+     unlocking scroll (see PHASE1_COUNT in the hero script), so getting
+     every download started this early, this soon, directly shortens
+     how long that wait ends up being. fetchpriority is only set high on
+     the first few — the rest stay default priority so they never
+     starve the fonts/vendor scripts of bandwidth, just queue in behind
+     them. -->
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0001.webp?v=5">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0002.webp?v=5">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0003.webp?v=5">
@@ -61,6 +65,240 @@
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0005.webp?v=5">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp?v=5">
 <link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0008.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0009.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0010.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0011.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0012.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0013.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0014.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0015.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0016.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0017.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0018.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0019.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0020.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0021.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0022.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0023.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0024.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0025.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0026.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0027.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0028.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0029.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0030.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0031.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0032.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0033.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0034.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0035.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0036.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0037.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0038.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0039.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0040.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0041.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0042.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0043.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0044.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0045.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0046.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0047.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0048.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0049.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0050.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0051.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0052.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0053.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0054.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0055.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0056.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0057.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0058.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0059.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0060.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0061.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0062.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0063.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0064.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0065.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0066.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0067.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0068.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0069.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0070.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0071.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0072.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0073.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0074.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0075.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0076.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0077.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0078.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0079.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0080.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0081.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0082.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0083.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0084.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0085.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0086.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0087.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0088.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0089.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0090.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0091.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0092.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0093.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0094.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0095.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0096.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0097.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0098.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0099.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0100.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0101.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0102.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0103.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0104.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0105.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0106.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0107.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0108.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0109.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0110.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0111.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0112.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0113.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0114.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0115.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0116.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0117.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0118.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0119.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0120.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0121.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0122.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0123.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0124.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0125.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0126.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0127.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0128.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0129.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0130.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0131.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0132.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0133.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0134.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0135.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0136.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0137.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0138.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0139.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0140.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0141.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0142.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0143.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0144.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0145.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0146.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0147.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0148.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0149.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0150.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0151.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0152.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0153.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0154.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0155.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0156.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0157.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0158.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0159.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0160.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0161.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0162.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0163.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0164.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0165.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0166.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0167.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0168.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0169.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0170.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0171.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0172.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0173.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0174.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0175.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0176.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0177.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0178.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0179.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0180.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0181.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0182.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0183.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0184.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0185.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0186.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0187.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0188.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0189.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0190.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0191.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0192.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0193.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0194.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0195.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0196.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0197.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0198.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0199.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0200.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0201.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0202.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0203.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0204.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0205.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0206.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0207.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0208.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0209.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0210.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0211.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0212.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0213.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0214.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0215.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0216.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0217.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0218.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0219.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0220.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0221.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0222.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0223.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0224.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0225.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0226.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0227.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0228.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0229.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0230.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0231.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0232.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0233.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0234.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0235.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0236.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0237.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0238.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0239.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0240.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0241.webp?v=5">
 <!-- Calendly's popup widget — loaded from Calendly's own CDN rather than
      vendored like GSAP/Lenis above: those are static libraries that never
      change once pinned, but this is a live third-party booking service —
