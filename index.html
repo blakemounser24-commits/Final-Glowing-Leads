@@ -71,7 +71,14 @@
      needs (fonts/vendor scripts/first frames above) and loaded async/
      low-priority, since nothing here is needed until a visitor actually
      clicks the consultation button — see setupCalendlyPopup in the site
-     script for the click handling and its no-JS/slow-load fallback. -->
+     script for the click handling and its no-JS/slow-load fallback.
+     Preconnecting both of Calendly's origins here means the DNS+TLS
+     handshake is already done in the background by the time anyone
+     actually clicks — previously that setup cost was only paid AFTER
+     the click, on top of however long the popup's own content then
+     takes to load, which is what made it feel slow to open. -->
+<link rel="preconnect" href="https://assets.calendly.com">
+<link rel="preconnect" href="https://calendly.com">
 <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
 <script src="https://assets.calendly.com/assets/external/widget.js" async onerror="console.error('[site] Failed to load Calendly widget')"></script>
 <style>
@@ -2139,14 +2146,31 @@
   // for the specific bugs the first two attempts shipped with.
   var TOTAL_FRAMES = 241;
   // Only this many frames block the preloader — the rest stream in the
-  // background afterward. Cut further from 10: load speed and frame
-  // density are separate concerns, so this doesn't need to scale with
-  // the total frame count. If a fast scroll outruns the background
-  // stream, findClosestLoaded() below degrades gracefully to the
-  // nearest frame that IS ready.
-  var PHASE1_COUNT = 7;
-  // High enough that all of phase 1 fires as a single parallel batch.
-  var CONCURRENCY = 7;
+  // background afterward. Mobile keeps this small: its preloader just
+  // needs to get the touch listener wired up fast, and setupMobileIntro's
+  // own playback isn't gated on loading at all anymore (started instantly
+  // on touch, per explicit request).
+  //
+  // Desktop is different: reports of the hero being "laggy... like it
+  // hasn't loaded yet" on some page loads but not others is exactly what
+  // a fast connection vs. a slow one looks like here — on a slow
+  // connection, the small blocking batch finishes, scroll unlocks, and
+  // the other ~234 frames are still streaming in the background when
+  // scrolling starts, so findClosestLoaded() below has to fall back to
+  // repeating whichever frame IS ready. A fixed frame count can never
+  // fully solve this because it can't know the visitor's connection
+  // speed — waiting for the ENTIRE sequence to finish, whatever that
+  // actually takes on THAT connection, is the only way to guarantee it
+  // never happens, which is what was explicitly asked for. The existing
+  // preloader percentage already reflects genuine progress either way,
+  // not a fake/fixed delay.
+  var PHASE1_COUNT = isMobile ? 7 : TOTAL_FRAMES;
+  // Only ever runs while scroll is still locked (preloader hasn't hidden
+  // yet) on both platforms, so there's no competing scroll-render work
+  // for a decode burst to fight here — safe to be higher than the 7 this
+  // used to share with PHASE1_COUNT, which only made sense back when
+  // phase 1 was small on both platforms.
+  var CONCURRENCY = 20;
   // Phase 2 (the ~234 frames streaming in after unlock) gets a much
   // lower concurrency than phase 1 ON DESKTOP: it competes with actual
   // scrolling/rendering happening in real time there, which is exactly
