@@ -2680,6 +2680,14 @@
 
     lenis.stop();
 
+    // Exposed so the site-sections script (a separate, later <script>
+    // block with no access to this IIFE's locals) can stop/start the
+    // same Lenis instance — needed so opening/closing the Calendly
+    // popup can actually lock/unlock scroll. Toggling the .scroll-locked
+    // CSS class alone hides the native scrollbar but doesn't stop Lenis
+    // itself from still processing wheel input underneath the popup.
+    window.__glLenis = lenis;
+
     lenis.on('scroll', ScrollTrigger.update);
 
     gsap.ticker.add(function(time){
@@ -3053,7 +3061,35 @@
       // it's actually available.
       if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
       e.preventDefault();
+
+      // Lock the page's own scroll while the popup is open — otherwise
+      // the page underneath stays scrollable (visible as a stray
+      // scrollbar/whitespace around the popup, since it doesn't cover
+      // the full page height). Same .scroll-locked class the hero
+      // preloader itself uses, plus actually stopping Lenis (our smooth-
+      // scroll library) rather than just hiding the native scrollbar —
+      // Lenis keeps processing wheel/touch input on its own regardless
+      // of CSS overflow, so both are needed to fully stop it.
+      var htmlEl = document.documentElement;
+      var bodyEl = document.body;
+      htmlEl.classList.add("scroll-locked");
+      bodyEl.classList.add("scroll-locked");
+      if (window.__glLenis) window.__glLenis.stop();
+
       Calendly.initPopupWidget({ url: CALENDLY_POPUP_URL });
+
+      // Calendly's popup has no public "closed" event — it just removes
+      // its own .calendly-overlay element from the DOM when closed
+      // (its own [x] button, clicking the backdrop, or Escape), so
+      // watch for that instead to know when to restore scroll.
+      var observer = new MutationObserver(function(){
+        if (document.querySelector(".calendly-overlay")) return;
+        htmlEl.classList.remove("scroll-locked");
+        bodyEl.classList.remove("scroll-locked");
+        if (window.__glLenis) window.__glLenis.start();
+        observer.disconnect();
+      });
+      observer.observe(document.body, { childList: true });
     });
   })();
 
