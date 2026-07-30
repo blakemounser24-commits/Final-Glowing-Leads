@@ -395,7 +395,17 @@
     flex-wrap:wrap;
     gap:16px;
   }
-  .hero-consult-cta{
+  /* Shared "Book a Free Consultation" button style — reused wherever the
+     button appears on the page (hero, pricing, contact), not just here.
+     Deliberately its own look, distinct from both hero-cta's neutral
+     outline and the pricing .btn-solid's full blue-gradient fill: dark
+     fill with an electric-blue border/glow, so it reads as a consistent,
+     recognizable action wherever a visitor encounters it. No opacity/
+     animation state on the shared class — each place it's used is
+     visible by default; .hero-consult-cta below layers the hero's own
+     hidden-until-revealed treatment on top, since that instance needs to
+     participate in the hero's reveal timeline the way hero-cta does. */
+  .consult-btn{
     display:inline-flex;
     align-items:center;
     gap:12px;
@@ -407,32 +417,33 @@
     text-transform:uppercase;
     color:#f3efe6;
     text-decoration:none;
-    /* Dark fill with an electric-blue border/glow, rather than the
-       hero-cta's neutral outline or the pricing .btn-solid's full blue
-       gradient fill — asked to stand out as its own distinct action
-       without competing with either existing button style. */
     background:rgba(10,16,36,0.75);
     border:1px solid rgba(122,162,255,0.55);
     border-radius:6px;
     box-shadow:0 12px 32px -10px rgba(0,0,0,0.6), 0 0 24px -6px rgba(58,102,235,0.5);
-    opacity:0;
-    transform:translateY(16px);
     pointer-events:auto;
     cursor:pointer;
     transition:background 220ms ease,border-color 220ms ease,box-shadow 220ms ease,transform 220ms ease;
   }
-  .hero-consult-cta svg{ width:16px; height:16px; flex:0 0 auto; color:#8aa8ff; transition:transform 220ms ease; }
-  .hero-consult-cta:hover{
+  .consult-btn svg{ width:16px; height:16px; flex:0 0 auto; color:#8aa8ff; transition:transform 220ms ease; }
+  .consult-btn:hover{
     background:rgba(58,102,235,0.16);
     border-color:rgba(122,162,255,0.85);
     box-shadow:0 16px 40px -10px rgba(0,0,0,0.7), 0 0 32px -4px rgba(58,102,235,0.75);
   }
-  .hero-consult-cta:hover svg{ transform:scale(1.1); }
-  .hero-consult-cta:focus-visible{
+  .consult-btn:hover svg{ transform:scale(1.1); }
+  .consult-btn:focus-visible{
     outline:1px solid rgba(122,162,255,0.9);
     outline-offset:3px;
   }
-  .hero-consult-cta:active{ transform:translateY(1px); }
+  .consult-btn:active{ transform:translateY(1px); }
+  .hero-consult-cta{ opacity:0; transform:translateY(16px); }
+  /* Safety net for every .consult-btn on the page, not just the hero's —
+     "Book a Free Consultation" plus the icon is long enough to risk
+     overflowing on genuinely narrow phones wherever it's placed. */
+  @media (max-width:480px){
+    .consult-btn{ width:100%; justify-content:center; }
+  }
 
   @media (max-width:720px){
     .hero-nav-links{ display:none; }
@@ -1398,6 +1409,35 @@
     .pricing-maintenance-list{ grid-template-columns:1fr; }
   }
 
+  .pricing-consult{
+    margin-top:36px;
+    padding-top:32px;
+    border-top:1px solid rgba(255,255,255,0.09);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+  }
+  .pricing-consult-text{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-weight:300;
+    font-size:14px;
+    color:rgba(255,255,255,0.55);
+    max-width:420px;
+  }
+  .pricing-consult-actions{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .pricing-consult-link{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:13px;
+    font-weight:500;
+    color:rgba(255,255,255,0.6);
+    text-decoration:underline;
+    text-underline-offset:3px;
+    transition:color 200ms ease;
+  }
+  .pricing-consult-link:hover{ color:#8aa8ff; }
+
   /* interactive magnetic starfield background (pricing.txt module) */
   .pricing-starfield{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
   /* No will-change here on purpose — promoting ~40 individual dots to their
@@ -1419,6 +1459,18 @@
     margin-bottom:28px;
     opacity:0;
     transform:translateY(16px);
+  }
+  .contact-consult{
+    margin-top:8px;
+    padding-top:28px;
+    border-top:1px solid rgba(255,255,255,0.09);
+  }
+  .contact-consult-text{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+    font-weight:300;
+    font-size:14px;
+    color:rgba(255,255,255,0.55);
+    margin:0 0 18px 0;
   }
   .contact-info-icon{
     width:42px;
@@ -1636,7 +1688,7 @@
            blocked by an ad blocker, or fails to load — setupCalendlyPopup
            in the site script progressively enhances it into the in-page
            popup overlay instead when Calendly's widget is actually ready. -->
-      <a href="https://calendly.com/glowingleads/free-15-minute-consultation" target="_blank" rel="noopener" class="hero-consult-cta" id="hero-consult-cta">
+      <a href="https://calendly.com/glowingleads/free-15-minute-consultation" target="_blank" rel="noopener" class="consult-btn hero-consult-cta" id="hero-consult-cta">
         <span>Book a Free Consultation</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
       </a>
@@ -1924,6 +1976,16 @@
                 </ul>
                 <p class="pricing-maintenance-desc">Small requests may be billed hourly, while larger changes are quoted as fixed-price projects.</p>
               </div>
+              <div class="pricing-consult">
+                <p class="pricing-consult-text">Not sure which plan fits your business? Book a free 15-minute call and we'll help you figure it out.</p>
+                <div class="pricing-consult-actions">
+                  <a href="https://calendly.com/glowingleads/free-15-minute-consultation" target="_blank" rel="noopener" class="consult-btn">
+                    <span>Book a Free Consultation</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+                  </a>
+                  <a href="#contact" class="pricing-consult-link">or send us a message</a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1970,6 +2032,13 @@
               <div class="contact-info-label">Location</div>
               <div class="contact-info-value">Sydney, Australia</div>
             </div>
+          </div>
+          <div class="contact-consult">
+            <p class="contact-consult-text">Prefer to talk it through first? Book a free 15-minute call — or fill out the form and we'll get back to you.</p>
+            <a href="https://calendly.com/glowingleads/free-15-minute-consultation" target="_blank" rel="noopener" class="consult-btn">
+              <span>Book a Free Consultation</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+            </a>
           </div>
           </div>
         </div>
@@ -2671,25 +2740,28 @@
 
   // ---- "Book a Free Consultation" — opens Calendly in the popup
   // overlay widget instead of the plain new-tab navigation the <a> would
-  // otherwise do on its own. Purely additive, doesn't touch the hero
-  // engine at all. ----
+  // otherwise do on its own. Applies to every .consult-btn on the page
+  // (hero, pricing, contact — same shared class), not just one. Purely
+  // additive, doesn't touch the hero engine at all. ----
   (function setupCalendlyPopup(){
-    var btn = document.getElementById("hero-consult-cta");
-    if (!btn) return;
+    var buttons = document.querySelectorAll(".consult-btn");
+    if (!buttons.length) return;
 
-    btn.addEventListener("click", function(e){
-      // Calendly's widget.js loads async and lives on their CDN, not
-      // ours — if it hasn't finished loading yet (slow connection, still
-      // in flight) or got blocked outright (ad blockers commonly target
-      // third-party scheduling/marketing widgets), window.Calendly just
-      // won't exist. In that case, do nothing special and let the <a>'s
-      // own href/target="_blank" carry out its normal action: open
-      // Calendly directly in a new tab. Still a fully working booking
-      // flow either way — this only upgrades it to the nicer in-page
-      // overlay when it's actually available.
-      if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
-      e.preventDefault();
-      Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation" });
+    buttons.forEach(function(btn){
+      btn.addEventListener("click", function(e){
+        // Calendly's widget.js loads async and lives on their CDN, not
+        // ours — if it hasn't finished loading yet (slow connection, still
+        // in flight) or got blocked outright (ad blockers commonly target
+        // third-party scheduling/marketing widgets), window.Calendly just
+        // won't exist. In that case, do nothing special and let the <a>'s
+        // own href/target="_blank" carry out its normal action: open
+        // Calendly directly in a new tab. Still a fully working booking
+        // flow either way — this only upgrades it to the nicer in-page
+        // overlay when it's actually available.
+        if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
+        e.preventDefault();
+        Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation" });
+      });
     });
   })();
 
