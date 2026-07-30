@@ -81,6 +81,15 @@
 <link rel="preconnect" href="https://calendly.com">
 <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
 <script src="https://assets.calendly.com/assets/external/widget.js" async onerror="console.error('[site] Failed to load Calendly widget')"></script>
+<!-- Beyond the preconnect above (DNS+TLS only), this fetches the actual
+     booking page HTML the popup's iframe loads on click, so the browser
+     already has it cached by the time anyone clicks — the popup itself
+     still has to render, that part is Calendly's own infrastructure and
+     out of our control, but the network round-trip for the page itself
+     no longer has to happen after the click. Low priority so it never
+     competes with anything the hero needs. -->
+<link rel="prefetch" href="https://calendly.com/glowingleads/free-15-minute-consultation?text_color=0069ff&primary_color=1a1a1a">
+
 <style>
   html{
     background:#02040A;
@@ -2169,8 +2178,13 @@
   // yet) on both platforms, so there's no competing scroll-render work
   // for a decode burst to fight here — safe to be higher than the 7 this
   // used to share with PHASE1_COUNT, which only made sense back when
-  // phase 1 was small on both platforms.
-  var CONCURRENCY = 20;
+  // phase 1 was small on both platforms. Raised again (20 -> 32): these
+  // are small webp files over HTTP/2 to the same origin, which
+  // multiplexes many concurrent requests over one connection just fine —
+  // more in flight at once means the ~32MB full sequence finishes sooner
+  // on any connection with the bandwidth to actually use it, with no
+  // downside since nothing else is rendering/scrolling yet to fight with.
+  var CONCURRENCY = 32;
   // Phase 2 (the ~234 frames streaming in after unlock) gets a much
   // lower concurrency than phase 1 ON DESKTOP: it competes with actual
   // scrolling/rendering happening in real time there, which is exactly
@@ -2687,6 +2701,11 @@
     preloader.style.transition = "opacity 400ms ease";
     preloader.style.opacity = "0";
 
+    // Was 1000ms — an extra 600ms of pure waiting after the fade-out
+    // transition (400ms) had already finished, on top of however long
+    // real loading took. Trimmed to match the transition itself: scroll
+    // unlocks the instant the preloader has actually faded out, not
+    // some arbitrary time after.
     setTimeout(function(){
       htmlEl.classList.remove("scroll-locked");
       bodyEl.classList.remove("scroll-locked");
@@ -2694,7 +2713,7 @@
         preloader.parentNode.removeChild(preloader);
       }
       lenis.start();
-    }, 1000);
+    }, 400);
   });
 
 })();
