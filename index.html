@@ -46,38 +46,259 @@
 <script src="./vendor/gsap.min.js" onerror="console.error('[hero] Failed to load GSAP')"></script>
 <script src="./vendor/ScrollTrigger.min.js" onerror="console.error('[hero] Failed to load ScrollTrigger')"></script>
 <script src="./vendor/lenis.min.js" onerror="console.error('[hero] Failed to load Lenis')"></script>
-<!-- Preload every hero frame CHUNK (not individual frames anymore —
-     see loadChunk()/CHUNK_SIZE in the hero script for why: 241
-     individual small requests were paying fixed per-request overhead
-     regardless of concurrency, so frames are now pre-bundled at build
-     time into ~21 larger chunk files instead). as="fetch" + crossorigin
-     (not as="image") since these are raw binary blobs consumed via
-     fetch()+ArrayBuffer, not loaded directly as <img> sources — an
-     as="image" preload wouldn't be reused by the matching fetch() call.
-     Puts every chunk in flight the moment <head> is parsed, same
-     reasoning as before: earlier network start = shorter wait before
-     desktop (which waits for literally all of them) unlocks scroll. -->
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_000.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_001.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_002.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_003.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_004.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_005.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_006.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_007.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_008.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_009.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_010.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_011.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_012.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_013.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_014.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_015.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_016.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_017.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_018.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_019.bin?v=1">
-<link rel="preload" as="fetch" crossorigin href="./frames/chunks/chunk_020.bin?v=1">
+<!-- Preload every single hero frame so the browser's preload scanner
+     puts all 241 in flight the moment <head> is parsed — genuinely
+     parallel over HTTP/2 — instead of waiting for the vendor scripts
+     above to download+execute and the deeply nested hero script tag
+     further down the body to actually run before it starts issuing
+     these requests. Desktop now waits for literally all of them before
+     unlocking scroll (see PHASE1_COUNT in the hero script), so getting
+     every download started this early, this soon, directly shortens
+     how long that wait ends up being. fetchpriority is only set high on
+     the first few — the rest stay default priority so they never
+     starve the fonts/vendor scripts of bandwidth, just queue in behind
+     them. -->
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0001.webp?v=5">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0002.webp?v=5">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0003.webp?v=5">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0004.webp?v=5">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0005.webp?v=5">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0006.webp?v=5">
+<link rel="preload" as="image" fetchpriority="high" href="./frames/frame_0007.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0008.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0009.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0010.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0011.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0012.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0013.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0014.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0015.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0016.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0017.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0018.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0019.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0020.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0021.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0022.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0023.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0024.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0025.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0026.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0027.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0028.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0029.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0030.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0031.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0032.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0033.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0034.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0035.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0036.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0037.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0038.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0039.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0040.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0041.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0042.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0043.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0044.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0045.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0046.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0047.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0048.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0049.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0050.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0051.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0052.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0053.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0054.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0055.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0056.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0057.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0058.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0059.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0060.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0061.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0062.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0063.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0064.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0065.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0066.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0067.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0068.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0069.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0070.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0071.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0072.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0073.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0074.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0075.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0076.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0077.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0078.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0079.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0080.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0081.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0082.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0083.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0084.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0085.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0086.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0087.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0088.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0089.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0090.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0091.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0092.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0093.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0094.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0095.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0096.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0097.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0098.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0099.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0100.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0101.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0102.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0103.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0104.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0105.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0106.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0107.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0108.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0109.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0110.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0111.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0112.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0113.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0114.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0115.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0116.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0117.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0118.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0119.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0120.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0121.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0122.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0123.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0124.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0125.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0126.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0127.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0128.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0129.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0130.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0131.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0132.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0133.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0134.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0135.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0136.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0137.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0138.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0139.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0140.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0141.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0142.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0143.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0144.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0145.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0146.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0147.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0148.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0149.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0150.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0151.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0152.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0153.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0154.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0155.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0156.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0157.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0158.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0159.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0160.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0161.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0162.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0163.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0164.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0165.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0166.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0167.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0168.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0169.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0170.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0171.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0172.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0173.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0174.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0175.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0176.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0177.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0178.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0179.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0180.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0181.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0182.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0183.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0184.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0185.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0186.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0187.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0188.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0189.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0190.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0191.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0192.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0193.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0194.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0195.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0196.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0197.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0198.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0199.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0200.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0201.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0202.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0203.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0204.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0205.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0206.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0207.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0208.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0209.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0210.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0211.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0212.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0213.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0214.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0215.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0216.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0217.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0218.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0219.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0220.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0221.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0222.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0223.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0224.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0225.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0226.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0227.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0228.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0229.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0230.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0231.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0232.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0233.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0234.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0235.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0236.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0237.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0238.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0239.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0240.webp?v=5">
+<link rel="preload" as="image" href="./frames/frame_0241.webp?v=5">
 <!-- Calendly's popup widget — loaded from Calendly's own CDN rather than
      vendored like GSAP/Lenis above: those are static libraries that never
      change once pinned, but this is a live third-party booking service —
@@ -2177,7 +2398,7 @@
   // of scroll instead of ~29px, small enough that the swap itself stops
   // being perceptible, and with no blending there's no ghosting/blur on
   // fast-moving content either. Third attempt at this exact approach —
-  // see CONCURRENCY/BACKGROUND_CONCURRENCY and CHUNK_ASSET_VERSION below
+  // see CONCURRENCY/BACKGROUND_CONCURRENCY and FRAME_ASSET_VERSION below
   // for the specific bugs the first two attempts shipped with.
   var TOTAL_FRAMES = 241;
   // Only this many frames block the preloader — the rest stream in the
@@ -2200,50 +2421,43 @@
   // preloader percentage already reflects genuine progress either way,
   // not a fake/fixed delay.
   var PHASE1_COUNT = isMobile ? 7 : TOTAL_FRAMES;
-  // Raising CONCURRENCY on the old per-frame requests (20 -> 32 -> 48)
-  // stopped moving the needle: at ~134KB average, each of the 241
-  // individual frame files is small enough that the FIXED per-request
-  // cost (TLS/connection overhead, request/response round-trip) — not
-  // the actual bytes — was what dominated total load time. More
-  // concurrent requests doesn't fix that; it's 241 requests worth of
-  // fixed overhead either way. Confirmed by directly timing it: fetching
-  // all 241 individually took ~3.1s server-side even with strong
-  // bandwidth, almost entirely latency rather than transfer time.
-  //
-  // The actual fix is fewer, larger requests carrying the exact same
-  // bytes: frames are pre-bundled at build time (see the chunk-builder
-  // note near loadChunk() below) into CHUNK_SIZE-frame binary blobs, cut
-  // total requests from 241 down to TOTAL_CHUNKS (currently ~21) — same
-  // total bytes, same source images, byte-identical per-frame content,
-  // just ~11x fewer round trips to pay for.
-  var CHUNK_SIZE = 12;
-  var TOTAL_CHUNKS = Math.ceil(TOTAL_FRAMES / CHUNK_SIZE);
-  // How many chunks phase 1 needs to cover PHASE1_COUNT frames. Desktop
-  // (PHASE1_COUNT = TOTAL_FRAMES) needs every chunk; mobile
-  // (PHASE1_COUNT = 7) needs only the first, since chunk 0 alone already
-  // covers frames 0-11.
-  var PHASE1_CHUNK_COUNT = Math.ceil(PHASE1_COUNT / CHUNK_SIZE);
-  // Chunk-level concurrency now, not frame-level — with only ~21 total
-  // chunks, there's no meaningful gain left to chase from raising this
-  // further; it only needs to be enough that phase 1's chunks are
-  // in flight together rather than queued one at a time. Same "only
-  // ever runs while scroll is locked" safety reasoning as before still
-  // applies — no competing scroll-render work to fight over bandwidth
-  // with here, on either platform.
-  var CONCURRENCY = 12;
-  // Phase 2 (remaining chunks streaming in after unlock) stays low on
-  // DESKTOP specifically: it would compete with actual scrolling/
-  // rendering happening in real time there. In practice this pool is
-  // always empty on desktop anyway (PHASE1_CHUNK_COUNT already covers
-  // every chunk), kept only so the logic stays correct if that ever
-  // changes.
-  var BACKGROUND_CONCURRENCY = 3;
-  // Mobile doesn't have that problem during THIS specific wait: scroll
-  // is locked (see setupMobileIntro) and nothing else is animating until
-  // the one-shot intro actually starts, so there's no scroll-rendering
-  // for a decode burst to fight — safe to fetch its remaining ~20 chunks
-  // aggressively.
-  var MOBILE_PHASE2_CONCURRENCY = 10;
+  // Only ever runs while scroll is still locked (preloader hasn't hidden
+  // yet) on both platforms, so there's no competing scroll-render work
+  // for a decode burst to fight here — safe to be higher than the 7 this
+  // used to share with PHASE1_COUNT, which only made sense back when
+  // phase 1 was small on both platforms. Raised twice now (20 -> 32 ->
+  // 48): these are small webp files over HTTP/2 to the same origin,
+  // which multiplexes many concurrent requests over one connection just
+  // fine — more in flight at once means the ~32MB full sequence finishes
+  // sooner on any connection with the bandwidth to actually use it, with
+  // no downside since nothing else is rendering/scrolling yet to fight
+  // with. Going meaningfully higher than this stops helping on a
+  // bandwidth-constrained connection (the bottleneck becomes total bytes
+  // over the wire, not how many requests are in flight) — a real further
+  // cut to the wait requires either unlocking before literally every
+  // frame is in (small risk of the old "still loading" stutter coming
+  // back) or shrinking the frames themselves.
+  var CONCURRENCY = 48;
+  // Phase 2 (the ~234 frames streaming in after unlock) gets a much
+  // lower concurrency than phase 1 ON DESKTOP: it competes with actual
+  // scrolling/rendering happening in real time there, which is exactly
+  // when a decode burst is most noticeable. A previous version of this
+  // same 241-frame setup used a high concurrency unconditionally and it
+  // measurably froze the page for multiple seconds during a fast scroll.
+  var BACKGROUND_CONCURRENCY = 4;
+  // Mobile doesn't have that problem during THIS specific wait: scroll is
+  // locked (see setupMobileIntro) and nothing else is animating until the
+  // one-shot intro actually starts, so there's no scroll-rendering for a
+  // decode burst to fight. But setupMobileIntro also waits for every
+  // phase-2 frame to finish loading before it'll start playing — at
+  // BACKGROUND_CONCURRENCY=4 that's 20-30+ seconds for ~30MB of
+  // remaining frames, which reads as the page being completely broken
+  // (locked, frozen, no feedback) rather than "still loading". A higher,
+  // mobile-only concurrency for this specific pool cuts that wait
+  // dramatically without reproducing the conditions that caused the
+  // original freeze (that happened DURING active scrolling; this happens
+  // while scrolling is deliberately blocked).
+  var MOBILE_PHASE2_CONCURRENCY = 20;
   var FRAME_W = 1920;
   var FRAME_H = 1080;
 
@@ -2290,60 +2504,47 @@
   // see renderCurrent() for how this becomes the windowed blend.
   var currentFrame = 0;
 
-  // Chunk files are served with a 1-year immutable Cache-Control (see
+  // Frame files are served with a 1-year immutable Cache-Control (see
   // vercel.json). Any browser that cached content under these filenames
   // from a previous deploy will never re-fetch them on its own under
   // that policy, so the version query param is what forces a fresh fetch.
-  // Bump it again any time chunk file content changes under the same
-  // filenames. v1 here since /frames/chunks/ is a brand new path — no
-  // collision with the old per-frame v3/v4/v5 URLs it replaces.
-  var CHUNK_ASSET_VERSION = "1";
+  // Bump it again any time frame file content changes under the same
+  // filenames — v3/v4 were both 122- and 241-frame sets used earlier in
+  // this same back-and-forth; v5 is this (third) 241-frame attempt.
+  var FRAME_ASSET_VERSION = "5";
 
-  function chunkUrl(chunkIndex){
-    return "./frames/chunks/chunk_" + String(chunkIndex).padStart(3, "0") + ".bin?v=" + CHUNK_ASSET_VERSION;
+  function frameUrl(index){
+    return "./frames/frame_" + String(index + 1).padStart(4, "0") + ".webp?v=" + FRAME_ASSET_VERSION;
   }
 
-  // Each chunk file is CHUNK_SIZE frames concatenated at build time as
-  // repeated [4-byte little-endian length][raw .webp bytes] records, in
-  // frame order — see build-frame-chunks.mjs at the repo root (frames
-  // are otherwise untouched, byte-for-byte identical to the original
-  // per-frame files, just bundled). Fetched once as a single
-  // ArrayBuffer, then split back out into individual frames client-side
-  // via createImageBitmap(), which decodes straight from the raw bytes
-  // without needing an intermediate <img>/blob-URL round trip.
-  function loadChunk(chunkIndex){
-    return fetch(chunkUrl(chunkIndex)).then(function(res){
-      return res.arrayBuffer();
-    }).then(function(buf){
-      var startFrame = chunkIndex * CHUNK_SIZE;
-      var frameCount = Math.min(CHUNK_SIZE, TOTAL_FRAMES - startFrame);
-      var view = new DataView(buf);
-      var offset = 0;
-      var entries = [];
-      for (var p = 0; p < frameCount; p++){
-        var len = view.getUint32(offset, true);
-        offset += 4;
-        entries.push({ frameIndex: startFrame + p, bytes: new Uint8Array(buf, offset, len) });
-        offset += len;
-      }
-      return Promise.all(entries.map(function(entry){
-        var blob = new Blob([entry.bytes], { type: "image/webp" });
-        return createImageBitmap(blob).then(function(bitmap){
-          frames[entry.frameIndex] = bitmap;
-          loadedFlags[entry.frameIndex] = true;
-        }).catch(function(){
-          console.error("[hero] Failed to decode frame " + entry.frameIndex + " from chunk " + chunkIndex);
-        });
-      }));
-    }).catch(function(){
-      console.error("[hero] Failed to load chunk: " + chunkUrl(chunkIndex));
+  function loadImage(index){
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){
+        if (img.decode) {
+          img.decode().then(function(){
+            frames[index] = img;
+            loadedFlags[index] = true;
+            resolve();
+          }).catch(function(){
+            frames[index] = img;
+            loadedFlags[index] = true;
+            resolve();
+          });
+        } else {
+          frames[index] = img;
+          loadedFlags[index] = true;
+          resolve();
+        }
+      };
+      img.onerror = function(){
+        console.error("[hero] Failed to load frame image: " + img.src);
+        resolve();
+      };
+      img.src = frameUrl(index);
     });
   }
 
-  // indices here are CHUNK indices (0..TOTAL_CHUNKS-1), not frame
-  // indices — onEach's progress percentage is therefore in chunk-sized
-  // steps (~5% per chunk at CHUNK_SIZE=12) rather than per-frame, which
-  // is a fine trade for cutting total requests ~11x.
   function loadPool(indices, onEach, concurrency){
     return new Promise(function(resolveAll){
       var next = 0;
@@ -2357,7 +2558,7 @@
         while (active < concurrency && next < total){
           var idx = indices[next++];
           active++;
-          loadChunk(idx).then(function(){
+          loadImage(idx).then(function(){
             active--;
             done++;
             if (onEach) onEach(done, total);
@@ -2740,10 +2941,10 @@
   // actually ready to draw.
 
   var phase1Indices = [];
-  for (var p1 = 0; p1 < PHASE1_CHUNK_COUNT; p1++){ phase1Indices.push(p1); }
+  for (var p1 = 0; p1 < PHASE1_COUNT; p1++){ phase1Indices.push(p1); }
 
   var phase2Indices = [];
-  for (var p2 = PHASE1_CHUNK_COUNT; p2 < TOTAL_CHUNKS; p2++){ phase2Indices.push(p2); }
+  for (var p2 = PHASE1_COUNT; p2 < TOTAL_FRAMES; p2++){ phase2Indices.push(p2); }
 
   loadPool(phase1Indices, function(done, total){
     var pct = Math.round((done / total) * 100);
