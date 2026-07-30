@@ -3042,25 +3042,15 @@
     document.addEventListener("click", function(e){
       var link = e.target.closest && e.target.closest('a[href*="calendly.com/glowingleads"]');
       if (!link) return;
-      // Prefer the pre-warmed modal (see setupCalendlyPrewarm near the
-      // end of the page) — its Calendly embed started loading in the
-      // background the moment the page finished loading, so by the time
-      // anyone actually clicks it typically opens instantly instead of
-      // taking a few seconds. window.__glOpenCalendlyModal only exists
-      // once that embed has actually been asked to render.
-      if (typeof window.__glOpenCalendlyModal === "function"){
-        e.preventDefault();
-        window.__glOpenCalendlyModal();
-        return;
-      }
-      // Fallback: Calendly's widget.js loads async and lives on their
-      // CDN, not ours — if it hasn't finished loading yet (slow
-      // connection, still in flight) or got blocked outright (ad
-      // blockers commonly target third-party scheduling/marketing
-      // widgets), window.Calendly just won't exist. In that case, do
-      // nothing special and let the <a>'s own href/target carry out its
-      // normal action: open Calendly directly in a new tab. Still a
-      // fully working booking flow either way.
+      // Calendly's widget.js loads async and lives on their CDN, not
+      // ours — if it hasn't finished loading yet (slow connection, still
+      // in flight) or got blocked outright (ad blockers commonly target
+      // third-party scheduling/marketing widgets), window.Calendly just
+      // won't exist. In that case, do nothing special and let the <a>'s
+      // own href/target carry out its normal action: open Calendly
+      // directly in a new tab. Still a fully working booking flow either
+      // way — this only upgrades it to the nicer in-page overlay when
+      // it's actually available.
       if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
       e.preventDefault();
       Calendly.initPopupWidget({ url: CALENDLY_POPUP_URL });
@@ -4194,98 +4184,6 @@
   ]); // end runChunks
   }); // end whenHeroReady
 
-})();
-</script>
-
-<!-- Calendly pre-warmed booking modal: an inline Calendly embed, kept
-     invisible/non-interactive and rendered off to the side, initialized
-     as soon as the page finishes loading rather than waiting for a
-     click. By the time anyone actually clicks a "Book a Free
-     Consultation" link (button or chat bot reply), Calendly's own page
-     has typically already finished loading in the background, so
-     opening this just reveals it — no multi-second wait at click time.
-     Own custom backdrop/box/close button since Calendly's inline embed
-     (unlike its popup widget) has no modal chrome of its own. Falls
-     back to Calendly's normal initPopupWidget flow (see
-     setupCalendlyPopup in the site script) if this never finishes
-     initializing — ad blockers commonly target third-party scheduling
-     widgets. -->
-<style>
-  #gl-calendly-modal{
-    position:fixed; inset:0; z-index:99999;
-    display:flex; align-items:center; justify-content:center;
-    opacity:0; visibility:hidden; pointer-events:none;
-    transition:opacity 200ms ease;
-  }
-  #gl-calendly-modal.gl-open{ opacity:1; visibility:visible; pointer-events:auto; }
-  #gl-calendly-backdrop{ position:absolute; inset:0; background:rgba(2,4,10,0.78); }
-  #gl-calendly-box{
-    position:relative; width:min(920px,92vw); height:min(760px,86vh);
-    background:#02040a; border:1px solid rgba(122,162,255,0.25); border-radius:16px;
-    overflow:hidden; box-shadow:0 30px 90px -20px rgba(0,0,0,0.85);
-  }
-  #gl-calendly-close{
-    position:absolute; top:10px; right:10px; z-index:2;
-    width:34px; height:34px; border-radius:50%; cursor:pointer;
-    background:rgba(10,16,36,0.75); border:1px solid rgba(122,162,255,0.45);
-    color:#f3efe6; font-size:20px; line-height:1;
-    display:flex; align-items:center; justify-content:center;
-  }
-  #gl-calendly-close:hover{ border-color:rgba(122,162,255,0.85); }
-  #gl-calendly-inline{ width:100%; height:100%; }
-  #gl-calendly-inline iframe{ width:100%; height:100%; border:0; }
-</style>
-<div id="gl-calendly-modal" aria-hidden="true">
-  <div id="gl-calendly-backdrop"></div>
-  <div id="gl-calendly-box">
-    <button type="button" id="gl-calendly-close" aria-label="Close booking dialog">&times;</button>
-    <div id="gl-calendly-inline"></div>
-  </div>
-</div>
-<script>
-(function setupCalendlyPrewarm(){
-  var modal = document.getElementById("gl-calendly-modal");
-  var inlineHost = document.getElementById("gl-calendly-inline");
-  var closeBtn = document.getElementById("gl-calendly-close");
-  var backdrop = document.getElementById("gl-calendly-backdrop");
-  if (!modal || !inlineHost) return;
-
-  var CALENDLY_URL = "https://calendly.com/glowingleads/free-15-minute-consultation?background_color=02040a&text_color=f3efe6&primary_color=7aa2ff";
-
-  function openModal(){
-    modal.classList.add("gl-open");
-    modal.setAttribute("aria-hidden", "false");
-  }
-  function closeModal(){
-    modal.classList.remove("gl-open");
-    modal.setAttribute("aria-hidden", "true");
-  }
-  closeBtn.addEventListener("click", closeModal);
-  backdrop.addEventListener("click", closeModal);
-  document.addEventListener("keydown", function(e){
-    if (e.key === "Escape") closeModal();
-  });
-
-  // Only exposed once the inline widget has actually been asked to
-  // render — if Calendly's script never loads (ad blocker, offline),
-  // this stays undefined and the click handler in setupCalendlyPopup
-  // falls back to its normal initPopupWidget/plain-link behavior
-  // instead of opening an empty modal.
-  var attempts = 0;
-  function tryInit(){
-    if (window.Calendly && typeof Calendly.initInlineWidget === "function"){
-      Calendly.initInlineWidget({ url: CALENDLY_URL, parentElement: inlineHost });
-      window.__glOpenCalendlyModal = openModal;
-      return;
-    }
-    // Gives up after ~15s (ad blocker or Calendly's CDN unreachable) —
-    // setupCalendlyPopup's own fallback chain takes over from there.
-    if (attempts++ < 100) setTimeout(tryInit, 150);
-  }
-  // Deferred to window "load" so this background render never competes
-  // with the hero/fonts/vendor scripts for bandwidth during initial load.
-  if (document.readyState === "complete") tryInit();
-  else window.addEventListener("load", tryInit);
 })();
 </script>
 
