@@ -2784,33 +2784,9 @@
         // overlay when it's actually available.
         if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
         e.preventDefault();
-        Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation" });
+        Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation?background_color=0069ff&primary_color=ffffff" });
       });
     });
-  })();
-
-  // ---- Calendly floating badge — the official "Schedule time with me"
-  // tab Calendly pins to the corner of every page, offered alongside the
-  // .consult-btn buttons above as another always-visible way to book.
-  // widget.css/js are already loaded in <head> (shared with the popup
-  // buttons), so this just waits for that async script to finish loading
-  // before initializing the badge — polled instead of click-triggered
-  // since there's no user interaction to hang the wait on here. ----
-  (function setupCalendlyBadge(){
-    var attempts = 0;
-    (function tryInit(){
-      if (window.Calendly && typeof Calendly.initBadgeWidget === "function") {
-        Calendly.initBadgeWidget({
-          url: "https://calendly.com/glowingleads/free-15-minute-consultation",
-          text: "Schedule time with me",
-          color: "#0069ff",
-          textColor: "#ffffff",
-          branding: false
-        });
-        return;
-      }
-      if (attempts++ < 100) setTimeout(tryInit, 100);
-    })();
   })();
 
   // ---- Hero hand-off: fade the big hero heading block out once the
