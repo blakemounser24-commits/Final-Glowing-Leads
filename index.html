@@ -2782,34 +2782,40 @@
   }
 
   // ---- "Book a Free Consultation" — opens Calendly in the popup
-  // overlay widget instead of the plain new-tab navigation the <a> would
-  // otherwise do on its own. Applies to every .consult-btn on the page
-  // (hero, pricing, contact — same shared class), not just one. Purely
-  // additive, doesn't touch the hero engine at all. ----
+  // overlay widget instead of the plain new-tab navigation an <a> would
+  // otherwise do on its own. Delegated on document rather than bound to
+  // .consult-btn elements directly, so it also catches Calendly links
+  // that don't exist in the DOM yet at page-load time — specifically the
+  // chat widget (glowingleads-chatbot.vercel.app/widget.js), which
+  // renders assistant replies through its own linkify() and turns any
+  // bare Calendly URL it mentions into a plain <a target="_blank"> deep
+  // inside its chat panel, appearing well after this script has already
+  // run. A direct addEventListener per-button can't see those; a
+  // delegated listener on document catches every click regardless of
+  // when or where the link was added. Purely additive, doesn't touch the
+  // hero engine at all. ----
   (function setupCalendlyPopup(){
-    var buttons = document.querySelectorAll(".consult-btn");
-    if (!buttons.length) return;
+    // Same colors as the .consult-btn instances — #02040A background,
+    // #f3efe6 text, #7aa2ff accent — so every entry point into Calendly
+    // opens the identical branded popup, whether it's a button on the
+    // page or a link the chat bot drops into its own reply.
+    var CALENDLY_POPUP_URL = "https://calendly.com/glowingleads/free-15-minute-consultation?background_color=02040a&text_color=f3efe6&primary_color=7aa2ff";
 
-    buttons.forEach(function(btn){
-      btn.addEventListener("click", function(e){
-        // Calendly's widget.js loads async and lives on their CDN, not
-        // ours — if it hasn't finished loading yet (slow connection, still
-        // in flight) or got blocked outright (ad blockers commonly target
-        // third-party scheduling/marketing widgets), window.Calendly just
-        // won't exist. In that case, do nothing special and let the <a>'s
-        // own href/target="_blank" carry out its normal action: open
-        // Calendly directly in a new tab. Still a fully working booking
-        // flow either way — this only upgrades it to the nicer in-page
-        // overlay when it's actually available.
-        if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
-        e.preventDefault();
-        // background/text/primary match the site's own palette exactly:
-        // #02040A is the same near-black used for every section background,
-        // #f3efe6 the same warm off-white used for body text, #7aa2ff the
-        // same electric-blue accent used for buttons/links/borders
-        // throughout — see the .consult-btn / accent color rules above.
-        Calendly.initPopupWidget({ url: "https://calendly.com/glowingleads/free-15-minute-consultation?background_color=02040a&text_color=f3efe6&primary_color=7aa2ff" });
-      });
+    document.addEventListener("click", function(e){
+      var link = e.target.closest && e.target.closest('a[href*="calendly.com/glowingleads"]');
+      if (!link) return;
+      // Calendly's widget.js loads async and lives on their CDN, not
+      // ours — if it hasn't finished loading yet (slow connection, still
+      // in flight) or got blocked outright (ad blockers commonly target
+      // third-party scheduling/marketing widgets), window.Calendly just
+      // won't exist. In that case, do nothing special and let the <a>'s
+      // own href/target carry out its normal action: open Calendly
+      // directly in a new tab. Still a fully working booking flow either
+      // way — this only upgrades it to the nicer in-page overlay when
+      // it's actually available.
+      if (!window.Calendly || typeof Calendly.initPopupWidget !== "function") return;
+      e.preventDefault();
+      Calendly.initPopupWidget({ url: CALENDLY_POPUP_URL });
     });
   })();
 
