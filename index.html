@@ -1887,7 +1887,15 @@
   .contact-form-status.is-success{ color:#8affb0; }
 
   .site-footer{
-    padding:32px clamp(20px,4vw,84px) 40px;
+    /* Bottom padding raised 40px -> 110px: the chat widget's floating
+       launcher (glowingleads-chatbot.vercel.app/widget.js) is fixed at
+       bottom:22px, 60px tall, so it occupies roughly the last ~82px of
+       viewport height regardless of scroll position — sitting directly
+       over this footer's bottom-right content (justify-content:
+       space-between puts .site-footer-copy, including the ABN, on that
+       same side) once scrolled all the way down. Extra clearance here
+       keeps the footer text above that zone instead. */
+    padding:32px clamp(20px,4vw,84px) 110px;
     display:flex;
     align-items:center;
     justify-content:space-between;
