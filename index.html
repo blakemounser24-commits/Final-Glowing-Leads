@@ -3194,12 +3194,57 @@
     var heroContentEl = document.querySelector(".hero-content");
     if (!heroSpacerEl || !heroContentEl) return;
 
+    // Pointer-events safety net for .hero-content's actual links
+    // (.hero-cta "Get Started", .hero-consult-cta "Book a Free
+    // Consultation") — two things were wrong with the previous version
+    // of this fade:
+    //
+    // 1. It only ever set pointerEvents on heroContentEl itself. Both
+    //    .hero-cta and .consult-btn (which .hero-consult-cta is) have
+    //    their OWN explicit `pointer-events:auto` in their CSS rules —
+    //    a child's own explicit declaration is not overridden by a
+    //    parent's, inline style or not, so toggling the parent alone
+    //    never actually disabled these buttons. They stayed clickable
+    //    at their fixed on-screen position (.hero-content is
+    //    position:absolute inside the position:fixed, full-viewport
+    //    #hero-overlay — bottom-left of the screen, regardless of
+    //    scroll) for the entire time anyone was on the page, on every
+    //    device. This is the real bug behind a report of tapping
+    //    About-section cards on mobile sometimes opening the Calendly
+    //    popup instead — an invisible-but-still-clickable button
+    //    sitting in that same screen area. Now sets pointerEvents
+    //    directly on each actual link inside .hero-content, which does
+    //    override their own CSS rule (inline style always wins there).
+    //
+    // 2. It was driven by this ScrollTrigger's self.progress, cached
+    //    from "bottom bottom"/"bottom top" pixel boundaries at setup
+    //    time — fine for the opacity/y fade below (purely cosmetic),
+    //    but mobile's dynamic viewport height (address bar showing/
+    //    hiding while scrolling) can drift those cached boundaries
+    //    enough that progress alone isn't reliable for something that
+    //    gates clickability. getBoundingClientRect() is always live —
+    //    recomputed fresh on every call — so it can't drift the way a
+    //    cached trigger boundary can; used here as the sole source of
+    //    truth for pointer-events instead, independent of the fade.
+    var heroContentLinks = heroContentEl.querySelectorAll("a");
+    function updateHeroContentPointerEvents(){
+      var rect = heroSpacerEl.getBoundingClientRect();
+      var pe = rect.bottom <= 0 ? "none" : "auto";
+      heroContentEl.style.pointerEvents = pe;
+      for (var i = 0; i < heroContentLinks.length; i++){
+        heroContentLinks[i].style.pointerEvents = pe;
+      }
+    }
+    updateHeroContentPointerEvents();
+    if (window.__glLenis) window.__glLenis.on("scroll", updateHeroContentPointerEvents);
+    window.addEventListener("resize", updateHeroContentPointerEvents);
+
     if (reduceMotion){
       ScrollTrigger.create({
         trigger: heroSpacerEl,
         start: "bottom bottom",
-        onEnter: function(){ gsap.set(heroContentEl, { opacity: 0, pointerEvents: "none" }); },
-        onLeaveBack: function(){ gsap.set(heroContentEl, { opacity: 1, pointerEvents: "auto" }); }
+        onEnter: function(){ gsap.set(heroContentEl, { opacity: 0 }); },
+        onLeaveBack: function(){ gsap.set(heroContentEl, { opacity: 1 }); }
       });
       return;
     }
@@ -3212,8 +3257,7 @@
       onUpdate: function(self){
         gsap.set(heroContentEl, {
           opacity: Math.max(0, 1 - self.progress * 1.3),
-          y: -self.progress * 36,
-          pointerEvents: self.progress > 0.35 ? "none" : "auto"
+          y: -self.progress * 36
         });
       }
     });
