@@ -1257,7 +1257,16 @@
     border:1px solid rgba(255,255,255,0.1);
     box-shadow:0 30px 80px -40px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.04);
     cursor:ew-resize;
-    touch-action:none;
+    /* pan-y, not none — this slider spans the full section width, so
+       "none" was swallowing every touch gesture that started on it,
+       including ones meant to scroll the page past this section
+       entirely (a real report: "doesn't let me scroll on mobile" on
+       this exact section). pan-y tells the browser to keep handling
+       vertical panning natively (scroll works normally) while leaving
+       horizontal movement for this slider's own pointermove handler
+       below — the standard pattern for a horizontal drag widget that
+       has to coexist with vertical page scroll. */
+    touch-action:pan-y;
     -webkit-user-select:none;
     user-select:none;
     opacity:0;
